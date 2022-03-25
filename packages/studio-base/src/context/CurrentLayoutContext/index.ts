@@ -11,6 +11,7 @@ import { selectWithUnstableIdentityWarning } from "@foxglove/studio-base/hooks/s
 import useGuaranteedContext from "@foxglove/studio-base/hooks/useGuaranteedContext";
 import useShouldNotChangeOften from "@foxglove/studio-base/hooks/useShouldNotChangeOften";
 import { LinkedGlobalVariables } from "@foxglove/studio-base/panels/ThreeDimensionalViz/Interactions/useLinkedGlobalVariables";
+import { PanelSettingsTreeChangeInterceptor } from "@foxglove/studio-base/providers/CurrentLayoutProvider";
 import toggleSelectedPanel from "@foxglove/studio-base/providers/CurrentLayoutProvider/toggleSelectedPanel";
 import { LayoutID } from "@foxglove/studio-base/services/ILayoutStorage";
 import { PanelConfig, PlaybackConfig, UserNodes } from "@foxglove/studio-base/types/panels";
@@ -49,6 +50,13 @@ export interface ICurrentLayout {
   removeLayoutStateListener: (listener: (_: LayoutState) => void) => void;
   addSelectedPanelIdsListener: (listener: (_: readonly string[]) => void) => void;
   removeSelectedPanelIdsListener: (listener: (_: readonly string[]) => void) => void;
+
+  applyPanelSettingsChange: (panelId: string, path: string[], value: unknown) => void;
+  registerPanelSettingsChangeInterceptor: (
+    panelId: string,
+    interceptor: PanelSettingsTreeChangeInterceptor,
+  ) => void;
+  unregisterPanelSettingsChangeInterceptor: (panelId: string) => void;
 
   /**
    * We use the same mosaicId for all mosaics (at the top level and within tabs) to support

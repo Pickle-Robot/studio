@@ -2,24 +2,27 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { Dialog, DialogFooter, PrimaryButton } from "@fluentui/react";
 import { Stack, Typography } from "@mui/material";
-import { ReactNode, useCallback, useLayoutEffect, useMemo, useState } from "react";
+import { isEmpty } from "lodash";
+import { ReactNode, useLayoutEffect, useState } from "react";
 
 import { definitions as commonDefs } from "@foxglove/rosmsg-msgs-common";
-import { PanelExtensionContext, Topic } from "@foxglove/studio";
-import HoverableIconButton from "@foxglove/studio-base/components/HoverableIconButton";
-import { useDialogHostId } from "@foxglove/studio-base/context/DialogHostIdContext";
+import { PanelExtensionContext } from "@foxglove/studio";
+import {
+  SettingsTree,
+  updateSettingsTree,
+} from "@foxglove/studio-base/components/SettingsTreeEditor/SettingsTree";
 import ThemeProvider from "@foxglove/studio-base/theme/ThemeProvider";
-import { darkFluentTheme, lightFluentTheme } from "@foxglove/studio-base/theme/createFluentTheme";
+import { PanelConfig } from "@foxglove/studio-base/types/panels";
 
 import DirectionalPad, { DirectionalPadAction } from "./DirectionalPad";
-import Settings from "./Settings";
-import { Config, DeepPartial } from "./types";
+import { DefaultConfig } from "./config";
 
 type TeleopPanelProps = {
   context: PanelExtensionContext;
 };
+
+type Config = typeof DefaultConfig;
 
 function ErrorMessage({
   children,
@@ -47,59 +50,39 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
 
   const [currentAction, setCurrentAction] = useState<DirectionalPadAction | undefined>();
 
-  // resolve an initial config which may have some missing fields into a full config
-  const [config, setConfig] = useState<Config>(() => {
-    const partialConfig = context.initialState as DeepPartial<Config>;
-
-    const {
-      topic,
-      publishRate = 1,
-      upButton: { field: upField = "linear-x", value: upValue = 1 } = {},
-      downButton: { field: downField = "linear-x", value: downValue = -1 } = {},
-      leftButton: { field: leftField = "angular-z", value: leftValue = 1 } = {},
-      rightButton: { field: rightField = "angular-z", value: rightValue = -1 } = {},
-    } = partialConfig;
-
-    return {
-      topic,
-      publishRate,
-      upButton: { field: upField, value: upValue },
-      downButton: { field: downField, value: downValue },
-      leftButton: { field: leftField, value: leftValue },
-      rightButton: { field: rightField, value: rightValue },
-    };
-  });
-
-  const [topics, setTopics] = useState<readonly Topic[] | undefined>();
-  const [showSettings, setShowSettings] = useState<boolean>(false);
-  const hostId = useDialogHostId();
-
-  const onChangeConfig = useCallback(
-    (newConfig: Config) => {
-      setConfig(newConfig);
-      saveState(newConfig);
-    },
-    [saveState],
+  const [config, setConfig] = useState<undefined | Config>(
+    (context.initialState as undefined | Config) ?? DefaultConfig,
   );
 
   // setup context render handler and render done handling
   const [renderDone, setRenderDone] = useState<() => void>(() => () => {});
   const [colorScheme, setColorScheme] = useState<"dark" | "light">("light");
   useLayoutEffect(() => {
-    context.watch("topics");
+    const interceptor = (previous: PanelConfig, path: string[], value: unknown) => {
+      return updateSettingsTree(previous as SettingsTree, path, value);
+    };
+    context.setSettingsChangeInterceptor(interceptor);
+
     context.watch("colorScheme");
+    context.watch("configuration");
+    context.watch("topics");
 
     context.onRender = (renderState, done) => {
       setRenderDone(() => done);
-      setTopics(renderState.topics);
       if (renderState.colorScheme) {
         setColorScheme(renderState.colorScheme);
       }
+
+      if (isEmpty(renderState.configuration)) {
+        saveState(DefaultConfig);
+      } else {
+        setConfig(renderState.configuration as Config);
+      }
     };
-  }, [context]);
+  }, [context, saveState]);
 
   // advertise topic
-  const { topic: currentTopic } = config;
+  const currentTopic = config?.fields.topic.value;
   useLayoutEffect(() => {
     if (!currentTopic) {
       return;
@@ -116,14 +99,6 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
       context.unadvertise?.(currentTopic);
     };
   }, [context, currentTopic]);
-
-  const topicNames = useMemo(() => {
-    if (!topics) {
-      return [];
-    }
-
-    return topics.map((topic) => topic.name);
-  }, [topics]);
 
   useLayoutEffect(() => {
     if (currentAction == undefined || !currentTopic) {
@@ -168,26 +143,39 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
 
     switch (currentAction) {
       case DirectionalPadAction.UP:
-        setFieldValue(config.upButton.field, config.upButton.value);
+        setFieldValue(
+          config.children.upButton.fields.field.value,
+          config.children.upButton.fields.value.value,
+        );
         break;
       case DirectionalPadAction.DOWN:
-        setFieldValue(config.downButton.field, config.downButton.value);
+        setFieldValue(
+          config.children.downButton.fields.field.value,
+          config.children.downButton.fields.value.value,
+        );
         break;
       case DirectionalPadAction.LEFT:
-        setFieldValue(config.leftButton.field, config.leftButton.value);
+        setFieldValue(
+          config.children.leftButton.fields.field.value,
+          config.children.leftButton.fields.value.value,
+        );
         break;
       case DirectionalPadAction.RIGHT:
-        setFieldValue(config.rightButton.field, config.rightButton.value);
+        setFieldValue(
+          config.children.rightButton.fields.field.value,
+          config.children.rightButton.fields.value.value,
+        );
         break;
-      default:
+      case DirectionalPadAction.STOP:
+        break;
     }
 
     // don't publish if rate is 0 or negative - this is a config error on user's part
-    if (config.publishRate <= 0) {
+    if (config.fields.publishRate.value <= 0) {
       return;
     }
 
-    const intervalMs = (1000 * 1) / config.publishRate;
+    const intervalMs = (1000 * 1) / config.fields.publishRate.value;
     context.publish?.(currentTopic, message);
     const intervalHandle = setInterval(() => {
       context.publish?.(currentTopic, message);
@@ -202,10 +190,10 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
     renderDone();
   }, [renderDone]);
 
-  const canPublish = context.publish != undefined && config.publishRate > 0;
+  const canPublish =
+    context.publish != undefined && config != undefined && config.fields.publishRate.value > 0;
   const hasTopic = Boolean(currentTopic);
   const enabled = canPublish && hasTopic;
-  const theme = colorScheme === "dark" ? darkFluentTheme : lightFluentTheme;
 
   return (
     <ThemeProvider isDark={colorScheme === "dark"}>
@@ -214,43 +202,10 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
           <ErrorMessage message="Please connect to a datasource that supports publishing in order to use this panel." />
         )}
         {canPublish && !hasTopic && (
-          <ErrorMessage message="Please select a topic in the panel settings in order to use this panel.">
-            <PrimaryButton onClick={() => setShowSettings(true)}>Open Panel Settings</PrimaryButton>
-          </ErrorMessage>
+          <ErrorMessage message="Please select a topic in the panel settings in order to use this panel." />
         )}
         {enabled && <DirectionalPad onAction={setCurrentAction} disabled={!enabled} />}
       </Stack>
-      <Stack position="absolute" top={0} left={0} margin={1}>
-        <HoverableIconButton
-          onClick={() => setShowSettings(true)}
-          iconProps={{
-            iconName: "Settings",
-            iconNameActive: "SettingsFilled",
-          }}
-          styles={{
-            root: {
-              backgroundColor: theme.semanticColors.buttonBackgroundHovered,
-              "&:hover": { backgroundColor: theme.semanticColors.buttonBackgroundPressed },
-            },
-            icon: { height: 20 },
-          }}
-        >
-          Panel settings
-        </HoverableIconButton>
-      </Stack>
-      <Dialog
-        dialogContentProps={{ title: "Teleop panel settings", showCloseButton: true }}
-        modalProps={{ layerProps: { hostId } }}
-        hidden={!showSettings}
-        onDismiss={() => setShowSettings(false)}
-        maxWidth={480}
-        minWidth={480}
-      >
-        <Settings config={config} onConfigChange={onChangeConfig} topics={topicNames} />
-        <DialogFooter>
-          <PrimaryButton onClick={() => setShowSettings(false)}>Done</PrimaryButton>
-        </DialogFooter>
-      </Dialog>
     </ThemeProvider>
   );
 }

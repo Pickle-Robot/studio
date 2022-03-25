@@ -66,6 +66,11 @@ export default function muiComponents(theme: Theme): ThemeOptions["components"] 
       defaultProps: {
         disableElevation: true,
       },
+      styleOverrides: {
+        colorInherit: {
+          backgroundColor: theme.palette.action.focus,
+        },
+      },
     },
     MuiCard: {
       defaultProps: {
@@ -220,6 +225,25 @@ export default function muiComponents(theme: Theme): ThemeOptions["components"] 
           lineHeight: theme.spacing(4),
         },
       },
+    },
+    MuiListItem: {
+      // variants: [
+      //   {
+      //     props: { showSecondaryActionsOnHover: true },
+      //     style: {
+      //       "@media (pointer: fine)": {
+      //         "& .MuiListItemSecondaryAction-root .MuiIconButton-root:last-child": {
+      //           visibility: "hidden",
+      //         },
+      //         "&:hover": {
+      //           "& .MuiListItemSecondaryAction-root .MuiIconButton-root:last-child": {
+      //             visibility: "visible",
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      // ],
     },
     MuiListItemButton: {
       defaultProps: { disableRipple: true },

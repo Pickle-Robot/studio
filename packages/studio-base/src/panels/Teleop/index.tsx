@@ -11,6 +11,7 @@ import PanelExtensionAdapter from "@foxglove/studio-base/components/PanelExtensi
 import { SaveConfig } from "@foxglove/studio-base/types/panels";
 
 import TeleopPanel from "./TeleopPanel";
+import { DefaultConfig } from "./config";
 import helpContent from "./index.help.md";
 
 function initPanel(context: PanelExtensionContext) {
@@ -39,6 +40,6 @@ function TeleopPanelAdapter(props: Props) {
 }
 
 TeleopPanelAdapter.panelType = "Teleop";
-TeleopPanelAdapter.defaultConfig = {};
+TeleopPanelAdapter.defaultConfig = DefaultConfig;
 
 export default Panel(TeleopPanelAdapter);

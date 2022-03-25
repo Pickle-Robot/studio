@@ -97,6 +97,11 @@ declare module "@foxglove/studio" {
 
   export interface RenderState {
     /**
+     * The panel configuration.
+     */
+    configuration?: unknown;
+
+    /**
      * The latest messages for the current render frame. These are new messages since the last render frame.
      */
     currentFrame?: readonly MessageEvent<unknown>[];
@@ -165,6 +170,17 @@ declare module "@foxglove/studio" {
      * The state value should be JSON serializable.
      */
     saveState: (state: Partial<unknown>) => void;
+
+    /**
+     * Register a change interceptor.
+     */
+    setSettingsChangeInterceptor: (
+      interceptor: (
+        previous: Record<string, unknown>,
+        path: string[],
+        value: unknown,
+      ) => Record<string, unknown>,
+    ) => void;
 
     /**
      * Set the value of parameter name to value.

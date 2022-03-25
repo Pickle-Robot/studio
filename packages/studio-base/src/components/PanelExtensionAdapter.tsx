@@ -32,16 +32,19 @@ import {
 import { usePanelContext } from "@foxglove/studio-base/components/PanelContext";
 import PanelToolbar from "@foxglove/studio-base/components/PanelToolbar";
 import { useAppConfiguration } from "@foxglove/studio-base/context/AppConfigurationContext";
+import CurrentLayoutContext from "@foxglove/studio-base/context/CurrentLayoutContext";
 import {
   useClearHoverValue,
   useHoverValue,
   useSetHoverValue,
 } from "@foxglove/studio-base/context/HoverValueContext";
+import useGuaranteedContext from "@foxglove/studio-base/hooks/useGuaranteedContext";
 import {
   AdvertiseOptions,
   PlayerCapabilities,
   PlayerState,
 } from "@foxglove/studio-base/players/types";
+import { PanelSettingsTreeChangeInterceptor } from "@foxglove/studio-base/providers/CurrentLayoutProvider";
 import { PanelConfig, SaveConfig } from "@foxglove/studio-base/types/panels";
 import { assertNever } from "@foxglove/studio-base/util/assertNever";
 
@@ -95,7 +98,7 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
   const requestBackfill = useMessagePipeline(selectRequestBackfill);
   const capabilities = useMessagePipeline(selectCapabilities);
   const seekPlayback = useMessagePipeline(selectSeekPlayback);
-  const { openSiblingPanel } = usePanelContext();
+  const { id: contextPanelId, openSiblingPanel } = usePanelContext();
 
   const [panelId] = useState(() => uuid());
 
@@ -105,6 +108,9 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
   const currentAppSettingsRef = useRef(new Map<string, AppSettingValue>());
   const [subscribedAppSettings, setSubscribedAppSettings] = useState<string[]>([]);
   const previousPlayerStateRef = useRef<PlayerState | undefined>(undefined);
+
+  const registerPanelChangeInterceptor =
+    useGuaranteedContext(CurrentLayoutContext).registerPanelSettingsChangeInterceptor;
 
   // To avoid updating extended message stores once message pipeline blocks are no longer updating
   // we store a ref to the blocks and only update stores when the ref is different
@@ -145,6 +151,10 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
   const appConfiguration = useAppConfiguration();
 
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
+
   // renderPanelImpl invokes the panel extension context's render function with updated
   // render state fields.
   //
@@ -171,7 +181,14 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
     let shouldRender = false;
 
     // The render state stats with the previous render state and changes are applied as detected
-    const renderState: RenderState = prevRenderState.current;
+    const renderState = prevRenderState.current;
+
+    if (watchedFieldsRef.current.has("configuration")) {
+      if (renderState.configuration !== configRef.current) {
+        renderState.configuration = configRef.current;
+        shouldRender = true;
+      }
+    }
 
     if (watchedFieldsRef.current.has("currentFrame")) {
       const currentFrame = ctx?.messageEventsBySubscriberId.get(panelId);
@@ -370,6 +387,10 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
       seekPlayback: seekPlayback ? (stamp: number) => seekPlayback(fromSec(stamp)) : undefined,
 
+      setSettingsChangeInterceptor: (interceptor: PanelSettingsTreeChangeInterceptor) => {
+        registerPanelChangeInterceptor(contextPanelId, interceptor);
+      },
+
       setParameter: (name: string, value: ParameterValue) => {
         const ctx = latestPipelineContextRef.current;
         ctx?.setParameter(name, value);
@@ -472,15 +493,17 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
       },
     };
   }, [
-    saveConfig,
     capabilities,
-    openSiblingPanel,
-    seekPlayback,
     clearHoverValue,
+    contextPanelId,
+    openSiblingPanel,
+    panelId,
+    registerPanelChangeInterceptor,
+    requestBackfill,
+    saveConfig,
+    seekPlayback,
     setHoverValue,
     setSubscriptions,
-    panelId,
-    requestBackfill,
   ]);
 
   const panelContainerRef = useRef<HTMLDivElement>(ReactNull);

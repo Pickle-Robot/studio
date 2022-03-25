@@ -114,6 +114,9 @@ export default function MockCurrentLayoutProvider({
     removeLayoutStateListener,
     addSelectedPanelIdsListener: useCallback(() => {}, []),
     removeSelectedPanelIdsListener: useCallback(() => {}, []),
+    applyPanelSettingsChange: () => undefined,
+    registerPanelSettingsChangeInterceptor: () => undefined,
+    unregisterPanelSettingsChangeInterceptor: () => undefined,
     mosaicId: "mockMosaicId",
     getSelectedPanelIds: useCallback(() => [], []),
     setSelectedPanelIds: useCallback(() => {
