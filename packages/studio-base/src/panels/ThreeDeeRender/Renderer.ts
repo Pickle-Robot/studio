@@ -12,6 +12,7 @@ import { Input } from "./Input";
 import { LayerErrors } from "./LayerErrors";
 import { MaterialCache } from "./MaterialCache";
 import { ModelCache } from "./ModelCache";
+import { Picker } from "./Picker";
 import { DetailLevel } from "./lod";
 import { FrameAxes } from "./renderables/FrameAxes";
 import { Markers } from "./renderables/Markers";
@@ -54,6 +55,7 @@ export class Renderer extends EventEmitter<RendererEvents> {
   input: Input;
   camera: THREE.PerspectiveCamera;
   controls: OrbitControls;
+  picker: Picker;
   materialCache = new MaterialCache();
   layerErrors = new LayerErrors();
   colorScheme: "dark" | "light" | undefined;
@@ -80,7 +82,6 @@ export class Renderer extends EventEmitter<RendererEvents> {
       canvas,
       alpha: true,
       antialias: true,
-      logarithmicDepthBuffer: true,
     });
     if (!this.gl.capabilities.isWebGL2) {
       throw new Error("WebGL2 is not supported");
@@ -141,10 +142,14 @@ export class Renderer extends EventEmitter<RendererEvents> {
     this.controls = new OrbitControls(this.camera, this.gl.domElement);
     this.controls.addEventListener("change", () => this.emit("cameraMove", this));
 
+    this.picker = new Picker(this.gl, this.scene, this.camera);
+
     this.animationFrame();
   }
 
   dispose(): void {
+    this.picker.dispose();
+    this.input.dispose();
     this.frameAxes.dispose();
     this.occupancyGrids.dispose();
     this.pointClouds.dispose();
@@ -229,7 +234,12 @@ export class Renderer extends EventEmitter<RendererEvents> {
     this.emit("cameraMove", this);
   };
 
-  clickHandler = (_cursorCoords: THREE.Vector2): void => {
-    //
+  clickHandler = (cursorCoords: THREE.Vector2): void => {
+    const objectId = this.picker.pick(cursorCoords.x, cursorCoords.y);
+    let obj = this.scene.getObjectById(objectId);
+    while (obj && obj.name === "") {
+      obj = obj.parent ?? undefined;
+    }
+    log.info(`Clicked on ${obj?.name} (${objectId}) at <${cursorCoords.x}, ${cursorCoords.y}>`);
   };
 }
