@@ -43,6 +43,9 @@ const DARK_OUTLINE = new THREE.Color(0xffffff);
 
 const TRANSFORM_STORAGE_TIME_NS = 60n * BigInt(1e9);
 
+const UNIT_X = new THREE.Vector3(1, 0, 0);
+const PI_2 = Math.PI / 2;
+
 const tempVec = new THREE.Vector3();
 const tempSpherical = new THREE.Spherical();
 const tempEuler = new THREE.Euler();
@@ -227,7 +230,7 @@ export class Renderer extends EventEmitter<RendererEvents> {
       .setFromSpherical(
         tempSpherical.set(cameraState.distance, cameraState.phi, -cameraState.thetaOffset),
       )
-      .applyAxisAngle(tempVec.set(1, 0, 0), Math.PI / 2);
+      .applyAxisAngle(UNIT_X, PI_2);
     this.camera.position.add(
       tempVec.set(
         cameraState.targetOffset[0],
