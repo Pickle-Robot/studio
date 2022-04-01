@@ -18,7 +18,7 @@ import { LayerErrors } from "./LayerErrors";
 import { MaterialCache } from "./MaterialCache";
 import { ModelCache } from "./ModelCache";
 import { Picker } from "./Picker";
-import { DetailLevel } from "./lod";
+import { DetailLevel, msaaSamples } from "./lod";
 import { FrameAxes } from "./renderables/FrameAxes";
 import { Markers } from "./renderables/Markers";
 import { OccupancyGrids } from "./renderables/OccupancyGrids";
@@ -153,22 +153,20 @@ export class Renderer extends EventEmitter<RendererEvents> {
 
     this.picker = new Picker(this.gl, this.scene, this.camera);
 
-    // NOTE: Type definition workaround
-    const maxSamples = (this.gl.capabilities as unknown as { maxSamples: number }).maxSamples;
-    const samples = Math.min(8, maxSamples);
+    const samples = msaaSamples(this.maxLod, this.gl.capabilities);
     // NOTE: Type definition workaround
     const targetOpts = { samples } as THREE.WebGLRenderTargetOptions;
-    const size = this.gl.getDrawingBufferSize(tempVec2);
+    const renderSize = this.gl.getDrawingBufferSize(tempVec2);
 
-    this.target = new THREE.WebGLRenderTarget(size.width, size.height, targetOpts);
-    this.outlinePass = new OutlinePass(size, this.scene, this.camera);
+    this.target = new THREE.WebGLRenderTarget(renderSize.width, renderSize.height, targetOpts);
+    this.outlinePass = new OutlinePass(renderSize, this.scene, this.camera);
     this.outlinePass.edgeStrength = 3;
     this.composer = new EffectComposer(this.gl, this.target);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
     this.composer.addPass(this.outlinePass);
     this.composer.addPass(new ShaderPass(GammaCorrectionShader));
 
-    log.debug(`Initialized ${size.width}x${size.height} renderer (${maxSamples}x MSAA)`);
+    log.debug(`Initialized ${renderSize.width}x${renderSize.height} renderer (${samples}x MSAA)`);
 
     this.animationFrame();
   }
@@ -282,10 +280,10 @@ export class Renderer extends EventEmitter<RendererEvents> {
   }
 
   resizeHandler = (size: THREE.Vector2): void => {
-    const renderSize = this.gl.getDrawingBufferSize(tempVec2);
-
     this.gl.setPixelRatio(window.devicePixelRatio);
     this.gl.setSize(size.width, size.height);
+
+    const renderSize = this.gl.getDrawingBufferSize(tempVec2);
     this.target.setSize(renderSize.width, renderSize.height);
     this.composer.setSize(renderSize.width, renderSize.height);
     for (const pass of this.composer.passes) {
