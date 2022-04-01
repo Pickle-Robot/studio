@@ -53,6 +53,7 @@ export class Input extends EventEmitter<InputEvents> {
   dispose(): void {
     const canvas = this.canvas;
 
+    this.removeAllListeners();
     this.resizeObserver.disconnect();
 
     document.removeEventListener("keydown", this.onKeyDown);

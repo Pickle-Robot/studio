@@ -4,6 +4,11 @@
 
 import EventEmitter from "eventemitter3";
 import * as THREE from "three";
+import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer";
+import { OutlinePass } from "three/examples/jsm/postprocessing/OutlinePass";
+import { RenderPass } from "three/examples/jsm/postprocessing/RenderPass";
+import { ShaderPass } from "three/examples/jsm/postprocessing/ShaderPass";
+import { GammaCorrectionShader } from "three/examples/jsm/shaders/GammaCorrectionShader";
 
 import Logger from "@foxglove/log";
 import { CameraState } from "@foxglove/regl-worldview";
@@ -33,13 +38,14 @@ export type RendererEvents = {
   removeLabel: (labelId: string, renderer: Renderer) => void;
 };
 
-// NOTE: These do not use .convertSRGBToLinear() since background color is not
-// affected by gamma correction
-const LIGHT_BACKDROP = new THREE.Color(0xececec);
-const DARK_BACKDROP = new THREE.Color(0x121217);
+const LIGHT_BACKDROP = new THREE.Color(0xececec).convertSRGBToLinear();
+const DARK_BACKDROP = new THREE.Color(0x121217).convertSRGBToLinear();
 
-const LIGHT_OUTLINE = new THREE.Color(0x000000);
-const DARK_OUTLINE = new THREE.Color(0xffffff);
+const LIGHT_OUTLINE = new THREE.Color(0x121217).convertSRGBToLinear();
+const DARK_OUTLINE = new THREE.Color(0xececec).convertSRGBToLinear();
+
+const LIGHT_HIGHLIGHT = new THREE.Color(0xffffff).convertSRGBToLinear();
+const DARK_HIGHLIGHT = new THREE.Color(0xffffff).convertSRGBToLinear();
 
 const TRANSFORM_STORAGE_TIME_NS = 60n * BigInt(1e9);
 
@@ -47,6 +53,7 @@ const UNIT_X = new THREE.Vector3(1, 0, 0);
 const PI_2 = Math.PI / 2;
 
 const tempVec = new THREE.Vector3();
+const tempVec2 = new THREE.Vector2();
 const tempSpherical = new THREE.Spherical();
 const tempEuler = new THREE.Euler();
 
@@ -54,6 +61,9 @@ export class Renderer extends EventEmitter<RendererEvents> {
   canvas: HTMLCanvasElement;
   gl: THREE.WebGLRenderer;
   maxLod = DetailLevel.High;
+  target: THREE.WebGLRenderTarget;
+  composer: EffectComposer;
+  outlinePass: OutlinePass;
   scene: THREE.Scene;
   dirLight: THREE.DirectionalLight;
   hemiLight: THREE.HemisphereLight;
@@ -90,7 +100,7 @@ export class Renderer extends EventEmitter<RendererEvents> {
     if (!this.gl.capabilities.isWebGL2) {
       throw new Error("WebGL2 is not supported");
     }
-    this.gl.outputEncoding = THREE.sRGBEncoding;
+    this.gl.outputEncoding = THREE.LinearEncoding;
     this.gl.toneMapping = THREE.NoToneMapping;
     this.gl.autoClear = false;
     this.gl.info.autoReset = false;
@@ -105,8 +115,6 @@ export class Renderer extends EventEmitter<RendererEvents> {
       height = canvas.parentElement.clientHeight;
       this.gl.setSize(width, height);
     }
-
-    log.debug(`Initialized ${width}x${height} renderer`);
 
     this.modelCache = new ModelCache({ ignoreColladaUpAxis: true });
 
@@ -141,30 +149,60 @@ export class Renderer extends EventEmitter<RendererEvents> {
     this.camera = new THREE.PerspectiveCamera(fov, width / height, near, far);
     this.camera.up.set(0, 0, 1);
     this.camera.position.set(1, -3, 1);
-    this.camera.lookAt(new THREE.Vector3(0, 0, 0));
+    this.camera.lookAt(0, 0, 0);
 
     this.picker = new Picker(this.gl, this.scene, this.camera);
+
+    // NOTE: Type definition workaround
+    const maxSamples = (this.gl.capabilities as unknown as { maxSamples: number }).maxSamples;
+    const samples = Math.min(8, maxSamples);
+    // NOTE: Type definition workaround
+    const targetOpts = { samples } as THREE.WebGLRenderTargetOptions;
+    const size = this.gl.getDrawingBufferSize(tempVec2);
+
+    // TODO(jhurliman): Use this when it actually works (upgrade three.js?)
+    // this.target = new THREE.WebGLRenderTarget(size.width, size.height, targetOpts);
+    this.target = new THREE.WebGLMultisampleRenderTarget(size.width, size.height, targetOpts);
+    this.outlinePass = new OutlinePass(size, this.scene, this.camera);
+    this.outlinePass.edgeStrength = 3;
+    this.composer = new EffectComposer(this.gl, this.target);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.composer.addPass(this.outlinePass);
+    this.composer.addPass(new ShaderPass(GammaCorrectionShader));
+
+    log.debug(`Initialized ${size.width}x${size.height} renderer (${maxSamples}x MSAA)`);
 
     this.animationFrame();
   }
 
   dispose(): void {
+    this.removeAllListeners();
     this.picker.dispose();
     this.input.dispose();
     this.frameAxes.dispose();
     this.occupancyGrids.dispose();
     this.pointClouds.dispose();
     this.markers.dispose();
+    this.target.dispose();
     this.gl.dispose();
   }
 
   setColorScheme(colorScheme: "dark" | "light"): void {
     log.debug(`Setting color scheme to "${colorScheme}"`);
     this.colorScheme = colorScheme;
-    this.gl.setClearColor(colorScheme === "dark" ? DARK_BACKDROP : LIGHT_BACKDROP, 1);
-    this.materialCache.outlineMaterial.color =
-      colorScheme === "dark" ? DARK_OUTLINE : LIGHT_OUTLINE;
-    this.materialCache.outlineMaterial.needsUpdate = true;
+    if (colorScheme === "dark") {
+      this.gl.setClearColor(DARK_BACKDROP);
+      this.materialCache.outlineMaterial.color.set(DARK_OUTLINE);
+      this.materialCache.outlineMaterial.needsUpdate = true;
+      this.outlinePass.visibleEdgeColor.set(DARK_HIGHLIGHT);
+      this.outlinePass.hiddenEdgeColor.set(DARK_HIGHLIGHT);
+    } else {
+      this.gl.setClearColor(LIGHT_BACKDROP);
+      this.materialCache.outlineMaterial.color.set(LIGHT_OUTLINE);
+      this.materialCache.outlineMaterial.needsUpdate = true;
+      this.outlinePass.visibleEdgeColor.set(LIGHT_HIGHLIGHT);
+      this.outlinePass.hiddenEdgeColor.set(LIGHT_HIGHLIGHT);
+    }
   }
 
   addTransformMessage(tf: TF): void {
@@ -217,7 +255,8 @@ export class Renderer extends EventEmitter<RendererEvents> {
     this.markers.startFrame(currentTime);
 
     this.gl.clear();
-    this.gl.render(this.scene, this.camera);
+    // this.gl.render(this.scene, this.camera);
+    this.composer.render();
 
     this.emit("endFrame", currentTime, this);
 
@@ -245,20 +284,62 @@ export class Renderer extends EventEmitter<RendererEvents> {
   }
 
   resizeHandler = (size: THREE.Vector2): void => {
-    log.debug(`Resizing to ${size.width}x${size.height}`);
     this.gl.setPixelRatio(window.devicePixelRatio);
     this.gl.setSize(size.width, size.height);
+    this.target.setSize(size.width, size.height);
+    this.composer.setSize(size.width, size.height);
+    for (const pass of this.composer.passes) {
+      (pass as Partial<ShaderPass>).uniforms?.["resolution"]?.value.set(
+        1 / size.width,
+        1 / size.height,
+      );
+    }
     this.camera.aspect = size.width / size.height;
     this.camera.updateProjectionMatrix();
+    const renderSize = this.gl.getDrawingBufferSize(tempVec2);
+    log.debug(`Resized renderer to ${renderSize.width}x${renderSize.height}`);
     this.animationFrame();
   };
 
   clickHandler = (cursorCoords: THREE.Vector2): void => {
+    // Clear the outline pass and render the scene again to update this.gl.renderLists
+    this.outlinePass.selectedObjects.length = 0;
+    this.animationFrame();
+
+    // Render a single pixel using a fragment shader that writes object IDs as
+    // colors, then read the value of that single pixel back
     const objectId = this.picker.pick(cursorCoords.x, cursorCoords.y);
-    let obj = this.scene.getObjectById(objectId);
-    while (obj && obj.name === "") {
-      obj = obj.parent ?? undefined;
+    if (objectId < 0) {
+      return;
     }
-    log.info(`Clicked on ${obj?.name} (${objectId}) at <${cursorCoords.x}, ${cursorCoords.y}>`);
+
+    // Traverse the scene looking for this objectId
+    const obj = this.scene.getObjectById(objectId);
+
+    // Find the first ancestor of the clicked object that has a name
+    // TODO: We should probably use a better way to identify the clicked object
+    let parentObj = obj;
+    while (parentObj && parentObj.name === "") {
+      parentObj = parentObj.parent ?? undefined;
+    }
+    if (!parentObj) {
+      return;
+    }
+
+    // Highlight all of the Mesh components of the clicked object
+    const selected: THREE.Object3D[] = [];
+    parentObj.traverseVisible((child) => {
+      if (
+        (child as Partial<THREE.Mesh>).isMesh === true &&
+        child.type !== "Line2" &&
+        child.type !== "LineSegments"
+      ) {
+        selected.push(child);
+      }
+    });
+    this.outlinePass.selectedObjects = selected;
+
+    // Re-render with the selected object
+    this.animationFrame();
   };
 }
