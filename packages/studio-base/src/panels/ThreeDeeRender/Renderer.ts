@@ -41,8 +41,8 @@ export type RendererEvents = {
 const LIGHT_BACKDROP = new THREE.Color(0xececec).convertSRGBToLinear();
 const DARK_BACKDROP = new THREE.Color(0x121217).convertSRGBToLinear();
 
-const LIGHT_OUTLINE = new THREE.Color(0x121217).convertSRGBToLinear();
-const DARK_OUTLINE = new THREE.Color(0xececec).convertSRGBToLinear();
+const LIGHT_OUTLINE = new THREE.Color(0x000000).convertSRGBToLinear();
+const DARK_OUTLINE = new THREE.Color(0xffffff).convertSRGBToLinear();
 
 const LIGHT_HIGHLIGHT = new THREE.Color(0xffffff).convertSRGBToLinear();
 const DARK_HIGHLIGHT = new THREE.Color(0xffffff).convertSRGBToLinear();
@@ -160,9 +160,7 @@ export class Renderer extends EventEmitter<RendererEvents> {
     const targetOpts = { samples } as THREE.WebGLRenderTargetOptions;
     const size = this.gl.getDrawingBufferSize(tempVec2);
 
-    // TODO(jhurliman): Use this when it actually works (upgrade three.js?)
-    // this.target = new THREE.WebGLRenderTarget(size.width, size.height, targetOpts);
-    this.target = new THREE.WebGLMultisampleRenderTarget(size.width, size.height, targetOpts);
+    this.target = new THREE.WebGLRenderTarget(size.width, size.height, targetOpts);
     this.outlinePass = new OutlinePass(size, this.scene, this.camera);
     this.outlinePass.edgeStrength = 3;
     this.composer = new EffectComposer(this.gl, this.target);
@@ -284,19 +282,21 @@ export class Renderer extends EventEmitter<RendererEvents> {
   }
 
   resizeHandler = (size: THREE.Vector2): void => {
+    const renderSize = this.gl.getDrawingBufferSize(tempVec2);
+
     this.gl.setPixelRatio(window.devicePixelRatio);
     this.gl.setSize(size.width, size.height);
-    this.target.setSize(size.width, size.height);
-    this.composer.setSize(size.width, size.height);
+    this.target.setSize(renderSize.width, renderSize.height);
+    this.composer.setSize(renderSize.width, renderSize.height);
     for (const pass of this.composer.passes) {
       (pass as Partial<ShaderPass>).uniforms?.["resolution"]?.value.set(
-        1 / size.width,
-        1 / size.height,
+        1 / renderSize.width,
+        1 / renderSize.height,
       );
     }
-    this.camera.aspect = size.width / size.height;
+    this.camera.aspect = renderSize.width / renderSize.height;
     this.camera.updateProjectionMatrix();
-    const renderSize = this.gl.getDrawingBufferSize(tempVec2);
+
     log.debug(`Resized renderer to ${renderSize.width}x${renderSize.height}`);
     this.animationFrame();
   };
