@@ -37,7 +37,7 @@ export class Picker {
     this.pickingTarget = new THREE.WebGLRenderTarget(1, 1, {
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
-      format: THREE.RGBAFormat,
+      format: THREE.RGBAFormat, // stores objectIds as uint32
       encoding: THREE.LinearEncoding,
     });
     this.pixelBuffer = new Uint8Array(4 * this.pickingTarget.width * this.pickingTarget.height);
