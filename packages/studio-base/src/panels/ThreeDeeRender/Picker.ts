@@ -11,12 +11,31 @@ import * as THREE from "three";
 
 type Camera = THREE.PerspectiveCamera | THREE.OrthographicCamera;
 
+// The width and height of the output viewport. This could be 1 to sample a
+// single pixel, but GL_POINTS with a >1 point size would be clipped
+const PIXEL_WIDTH = 9;
+
 const AlwaysPickObject = (_obj: THREE.Object3D) => true;
 // This works around an incorrect method definition, where passing null is valid
 const NullScene = ReactNull as unknown as THREE.Scene;
 
+export type PickerOptions = {
+  debug?: boolean;
+};
+
+/**
+ * Handles picking of objects in a scene (detecting 3D objects at a given screen
+ * coordinate). This works by performing a second rendering pass after
+ * `WebGLRenderer.renderLists` has been populated from a normal rendering pass.
+ * In the second pass, objectIds are written as colors to a small offscreen
+ * rendering target surrounding the sample point. The color at the sample point
+ * is then read back and used to determine which object was picked.
+ *
+ * Objects can set their own `userData.pickingMaterial` to override the default
+ * shader used for picking.
+ */
 export class Picker {
-  private renderer: THREE.WebGLRenderer;
+  private gl: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private camera: Camera;
   private shouldPickObjectCB: (object: THREE.Object3D) => boolean;
@@ -26,15 +45,23 @@ export class Picker {
   private clearColor = new THREE.Color(0xffffff);
   private currClearColor = new THREE.Color();
   private pickingTarget: THREE.WebGLRenderTarget;
+  private debug: boolean;
+  private isDebugPass = false;
 
-  constructor(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: Camera) {
-    this.renderer = renderer;
+  constructor(
+    gl: THREE.WebGLRenderer,
+    scene: THREE.Scene,
+    camera: Camera,
+    options: PickerOptions = {},
+  ) {
+    this.gl = gl;
     this.scene = scene;
     this.camera = camera;
     this.shouldPickObjectCB = AlwaysPickObject;
+    this.debug = options.debug ?? false;
 
     // This is the 1x1 pixel render target we use to do the picking
-    this.pickingTarget = new THREE.WebGLRenderTarget(1, 1, {
+    this.pickingTarget = new THREE.WebGLRenderTarget(PIXEL_WIDTH, PIXEL_WIDTH, {
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
       format: THREE.RGBAFormat, // stores objectIds as uint32
@@ -57,23 +84,23 @@ export class Picker {
 
   pick(x: number, y: number, shouldPickObject = AlwaysPickObject): number {
     this.shouldPickObjectCB = shouldPickObject;
-    const pixelRatio = this.renderer.getPixelRatio();
-    const xs = x * pixelRatio;
-    const ys = y * pixelRatio;
-    const w = this.renderer.domElement.width;
-    const h = this.renderer.domElement.height;
+    const hw = Math.floor(PIXEL_WIDTH / 2);
+    const pixelRatio = this.gl.getPixelRatio();
+    const xi = Math.max(0, x * pixelRatio - hw);
+    const yi = Math.max(0, y * pixelRatio - hw);
+    const w = this.gl.domElement.width;
+    const h = this.gl.domElement.height;
     // Set the projection matrix to only look at the pixel we are interested in
-    this.camera.setViewOffset(w, h, xs, ys, 1, 1);
-
-    const currRenderTarget = this.renderer.getRenderTarget();
-    const currAlpha = this.renderer.getClearAlpha();
-    this.renderer.getClearColor(this.currClearColor);
-    this.renderer.setRenderTarget(this.pickingTarget);
-    this.renderer.setClearColor(this.clearColor);
-    this.renderer.setClearAlpha(1);
-    this.renderer.clear();
-    this.renderer.render(this.emptyScene, this.camera);
-    this.renderer.readRenderTargetPixels(
+    this.camera.setViewOffset(w, h, xi, yi, PIXEL_WIDTH, PIXEL_WIDTH);
+    const currRenderTarget = this.gl.getRenderTarget();
+    const currAlpha = this.gl.getClearAlpha();
+    this.gl.getClearColor(this.currClearColor);
+    this.gl.setRenderTarget(this.pickingTarget);
+    this.gl.setClearColor(this.clearColor);
+    this.gl.setClearAlpha(1);
+    this.gl.clear();
+    this.gl.render(this.emptyScene, this.camera);
+    this.gl.readRenderTargetPixels(
       this.pickingTarget,
       0,
       0,
@@ -81,22 +108,42 @@ export class Picker {
       this.pickingTarget.height,
       this.pixelBuffer,
     );
-    this.renderer.setRenderTarget(currRenderTarget);
-    this.renderer.setClearColor(this.currClearColor, currAlpha);
+    this.gl.setRenderTarget(currRenderTarget);
+    this.gl.setClearColor(this.currClearColor, currAlpha);
     this.camera.clearViewOffset();
 
+    const xo = Math.min(hw, xi);
+    const yo = Math.min(hw, yi);
+    const offset = (yo * PIXEL_WIDTH + xo) * 4;
     const val =
-      (this.pixelBuffer[0]! << 24) +
-      (this.pixelBuffer[1]! << 16) +
-      (this.pixelBuffer[2]! << 8) +
-      this.pixelBuffer[3]!;
+      (this.pixelBuffer[offset + 0]! << 24) +
+      (this.pixelBuffer[offset + 1]! << 16) +
+      (this.pixelBuffer[offset + 2]! << 8) +
+      this.pixelBuffer[offset + 3]!;
+
+    if (this.debug) {
+      this.pickDebugRender();
+    }
+
     return val;
+  }
+
+  pickDebugRender(): void {
+    this.isDebugPass = true;
+    const currAlpha = this.gl.getClearAlpha();
+    this.gl.getClearColor(this.currClearColor);
+    this.gl.setClearColor(this.clearColor);
+    this.gl.setClearAlpha(1);
+    this.gl.clear();
+    this.gl.render(this.emptyScene, this.camera);
+    this.gl.setClearColor(this.currClearColor, currAlpha);
+    this.isDebugPass = false;
   }
 
   private handleAfterRender = (): void => {
     // This is the magic, these render lists are still filled with valid data.
     // So we can submit them again for picking and save lots of work!
-    const renderList = this.renderer.renderLists.get(this.scene, 0);
+    const renderList = this.gl.renderLists.get(this.scene, 0);
     renderList.opaque.forEach(this.processItem);
     renderList.transmissive.forEach(this.processItem);
     renderList.transparent.forEach(this.processItem);
@@ -104,7 +151,7 @@ export class Picker {
 
   private processItem = (renderItem: THREE.RenderItem): void => {
     const object = renderItem.object;
-    const objId = object.id;
+    const objId = this.isDebugPass ? hashInt(object.id) : object.id;
     const material = renderItem.material;
     const geometry = renderItem.geometry;
     if (
@@ -117,17 +164,10 @@ export class Picker {
     }
 
     const useInstancing = (object as Partial<THREE.InstancedMesh>).isInstancedMesh === true ? 1 : 0;
-    const frontSide = material.side === THREE.FrontSide ? 1 : 0;
-    const doubleSide = material.side === THREE.DoubleSide ? 1 : 0;
     const sprite = material.type === "SpriteMaterial" ? 1 : 0;
     const sizeAttenuation =
       (material as Partial<THREE.PointsMaterial>).sizeAttenuation === true ? 1 : 0;
-    const index =
-      (useInstancing << 0) |
-      (frontSide << 1) |
-      (doubleSide << 2) |
-      (sprite << 3) |
-      (sizeAttenuation << 4);
+    const index = (useInstancing << 0) | (sprite << 1) | (sizeAttenuation << 2);
     const pickingMaterial = renderItem.object.userData.pickingMaterial as
       | THREE.ShaderMaterial
       | undefined;
@@ -148,7 +188,7 @@ export class Picker {
              gl_FragColor = objectId;
            }
          `,
-        side: material.side,
+        side: THREE.DoubleSide,
       });
       renderMaterial.uniforms = { objectId: { value: [1.0, 1.0, 1.0, 1.0] } };
       this.materialCache.set(index, renderMaterial);
@@ -164,13 +204,20 @@ export class Picker {
       (objId & 255) / 255,
     ];
     renderMaterial.uniformsNeedUpdate = true;
-    this.renderer.renderBufferDirect(
-      this.camera,
-      NullScene,
-      geometry,
-      renderMaterial,
-      object,
-      ReactNull,
-    );
+    this.gl.renderBufferDirect(this.camera, NullScene, geometry, renderMaterial, object, ReactNull);
   };
+}
+
+// Used for debug colors, this remaps objectIds to pseudo-random 32-bit integers
+const A = new Uint32Array(1);
+function hashInt(x: number): number {
+  A[0] = x | 0;
+  A[0] -= A[0] << 6;
+  A[0] ^= A[0] >>> 17;
+  A[0] -= A[0] << 9;
+  A[0] ^= A[0] << 4;
+  A[0] -= A[0] << 3;
+  A[0] ^= A[0] << 10;
+  A[0] ^= A[0] >>> 15;
+  return A[0];
 }
