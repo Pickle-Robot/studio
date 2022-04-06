@@ -7,11 +7,11 @@ import { getLeaves } from "react-mosaic-component";
 
 import { useShallowMemo } from "@foxglove/hooks";
 import Logger from "@foxglove/log";
+import { SettingsTreeChangeInterceptor } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import { selectWithUnstableIdentityWarning } from "@foxglove/studio-base/hooks/selectWithUnstableIdentityWarning";
 import useGuaranteedContext from "@foxglove/studio-base/hooks/useGuaranteedContext";
 import useShouldNotChangeOften from "@foxglove/studio-base/hooks/useShouldNotChangeOften";
 import { LinkedGlobalVariables } from "@foxglove/studio-base/panels/ThreeDimensionalViz/Interactions/useLinkedGlobalVariables";
-import { PanelSettingsTreeChangeInterceptor } from "@foxglove/studio-base/providers/CurrentLayoutProvider";
 import toggleSelectedPanel from "@foxglove/studio-base/providers/CurrentLayoutProvider/toggleSelectedPanel";
 import { LayoutID } from "@foxglove/studio-base/services/ILayoutStorage";
 import { PanelConfig, PlaybackConfig, UserNodes } from "@foxglove/studio-base/types/panels";
@@ -54,7 +54,7 @@ export interface ICurrentLayout {
   applyPanelSettingsChange: (panelId: string, path: string[], value: unknown) => void;
   registerPanelSettingsChangeInterceptor: (
     panelId: string,
-    interceptor: PanelSettingsTreeChangeInterceptor,
+    interceptor: SettingsTreeChangeInterceptor,
   ) => void;
   unregisterPanelSettingsChangeInterceptor: (panelId: string) => void;
 

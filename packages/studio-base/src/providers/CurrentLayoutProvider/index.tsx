@@ -11,9 +11,10 @@ import { v4 as uuidv4 } from "uuid";
 import { useShallowMemo } from "@foxglove/hooks";
 import Logger from "@foxglove/log";
 import {
-  SettingsTree,
+  isSettingsTree,
+  SettingsTreeChangeInterceptor,
   updateSettingsTree,
-} from "@foxglove/studio-base/components/SettingsTreeEditor/SettingsTree";
+} from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import { useAnalytics } from "@foxglove/studio-base/context/AnalyticsContext";
 import CurrentLayoutContext, {
   ICurrentLayout,
@@ -45,12 +46,6 @@ import { LayoutManagerEventTypes } from "@foxglove/studio-base/services/ILayoutM
 import { PanelConfig, UserNodes, PlaybackConfig } from "@foxglove/studio-base/types/panels";
 import { windowAppURLState } from "@foxglove/studio-base/util/appURLState";
 import { getPanelTypeFromId } from "@foxglove/studio-base/util/layout";
-
-export type PanelSettingsTreeChangeInterceptor = (
-  config: PanelConfig,
-  path: string[],
-  value: unknown,
-) => PanelConfig;
 
 const log = Logger.getLogger(__filename);
 
@@ -278,10 +273,10 @@ export default function CurrentLayoutProvider({
     }
   }, [getUserProfile, layoutManager, setSelectedLayoutId]);
 
-  const [panelChangeInterceptors] = useState(new Map<string, PanelSettingsTreeChangeInterceptor>());
+  const [panelChangeInterceptors] = useState(new Map<string, SettingsTreeChangeInterceptor>());
 
   const registerPanelSettingsChangeInterceptor = useCallback(
-    (panelId: string, interceptor: PanelSettingsTreeChangeInterceptor) => {
+    (panelId: string, interceptor: SettingsTreeChangeInterceptor) => {
       panelChangeInterceptors.set(panelId, interceptor);
     },
     [panelChangeInterceptors],
@@ -301,9 +296,12 @@ export default function CurrentLayoutProvider({
         return;
       }
       const interceptor = panelChangeInterceptors.get(panelId);
-      const changedConfig = interceptor
-        ? interceptor(existingConfig, path, value)
-        : updateSettingsTree(existingConfig as SettingsTree, path, value);
+      const settingsTree = isSettingsTree(existingConfig);
+      const changedConfig = settingsTree
+        ? interceptor
+          ? interceptor(existingConfig, path, value)
+          : updateSettingsTree(existingConfig, path, value)
+        : existingConfig; // don't try to update non-settings trees
       const payload: SaveConfigsPayload = {
         configs: [
           {

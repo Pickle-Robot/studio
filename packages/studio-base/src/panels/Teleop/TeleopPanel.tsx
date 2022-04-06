@@ -11,18 +11,18 @@ import { PanelExtensionContext } from "@foxglove/studio";
 import {
   SettingsTree,
   updateSettingsTree,
-} from "@foxglove/studio-base/components/SettingsTreeEditor/SettingsTree";
+} from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import ThemeProvider from "@foxglove/studio-base/theme/ThemeProvider";
 import { PanelConfig } from "@foxglove/studio-base/types/panels";
 
 import DirectionalPad, { DirectionalPadAction } from "./DirectionalPad";
-import { DefaultConfig } from "./config";
+import { DefaultState } from "./defaultState";
 
 type TeleopPanelProps = {
   context: PanelExtensionContext;
 };
 
-type Config = typeof DefaultConfig;
+type TeleopState = typeof DefaultState;
 
 function ErrorMessage({
   children,
@@ -50,8 +50,8 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
 
   const [currentAction, setCurrentAction] = useState<DirectionalPadAction | undefined>();
 
-  const [config, setConfig] = useState<undefined | Config>(
-    (context.initialState as undefined | Config) ?? DefaultConfig,
+  const [panelState, setPanelState] = useState<undefined | TeleopState>(
+    (context.initialState as undefined | TeleopState) ?? DefaultState,
   );
 
   // setup context render handler and render done handling
@@ -74,15 +74,17 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
       }
 
       if (isEmpty(renderState.configuration)) {
-        saveState(DefaultConfig);
+        saveState(DefaultState);
       } else {
-        setConfig(renderState.configuration as Config);
+        setPanelState(renderState.configuration as TeleopState);
       }
     };
   }, [context, saveState]);
 
+  const settings = panelState?.settings.tree;
+
   // advertise topic
-  const currentTopic = config?.fields.topic.value;
+  const currentTopic = settings?.fields.topic.value;
   useLayoutEffect(() => {
     if (!currentTopic) {
       return;
@@ -144,26 +146,26 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
     switch (currentAction) {
       case DirectionalPadAction.UP:
         setFieldValue(
-          config.children.upButton.fields.field.value,
-          config.children.upButton.fields.value.value,
+          settings.children.upButton.fields.field.value,
+          settings.children.upButton.fields.value.value,
         );
         break;
       case DirectionalPadAction.DOWN:
         setFieldValue(
-          config.children.downButton.fields.field.value,
-          config.children.downButton.fields.value.value,
+          settings.children.downButton.fields.field.value,
+          settings.children.downButton.fields.value.value,
         );
         break;
       case DirectionalPadAction.LEFT:
         setFieldValue(
-          config.children.leftButton.fields.field.value,
-          config.children.leftButton.fields.value.value,
+          settings.children.leftButton.fields.field.value,
+          settings.children.leftButton.fields.value.value,
         );
         break;
       case DirectionalPadAction.RIGHT:
         setFieldValue(
-          config.children.rightButton.fields.field.value,
-          config.children.rightButton.fields.value.value,
+          settings.children.rightButton.fields.field.value,
+          settings.children.rightButton.fields.value.value,
         );
         break;
       case DirectionalPadAction.STOP:
@@ -171,11 +173,11 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
     }
 
     // don't publish if rate is 0 or negative - this is a config error on user's part
-    if (config.fields.publishRate.value <= 0) {
+    if (settings.fields.publishRate.value <= 0) {
       return;
     }
 
-    const intervalMs = (1000 * 1) / config.fields.publishRate.value;
+    const intervalMs = (1000 * 1) / settings.fields.publishRate.value;
     context.publish?.(currentTopic, message);
     const intervalHandle = setInterval(() => {
       context.publish?.(currentTopic, message);
@@ -184,14 +186,14 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
     return () => {
       clearInterval(intervalHandle);
     };
-  }, [context, config, currentTopic, currentAction]);
+  }, [context, panelState, currentTopic, currentAction, settings]);
 
   useLayoutEffect(() => {
     renderDone();
   }, [renderDone]);
 
   const canPublish =
-    context.publish != undefined && config != undefined && config.fields.publishRate.value > 0;
+    context.publish != undefined && settings != undefined && settings.fields.publishRate.value > 0;
   const hasTopic = Boolean(currentTopic);
   const enabled = canPublish && hasTopic;
 

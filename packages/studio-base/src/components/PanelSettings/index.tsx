@@ -8,7 +8,7 @@ import { useAsync, useUnmount } from "react-use";
 
 import { useConfigById } from "@foxglove/studio-base/PanelAPI";
 import SettingsEditor from "@foxglove/studio-base/components/SettingsTreeEditor";
-import { SettingsTree } from "@foxglove/studio-base/components/SettingsTreeEditor/SettingsTree";
+import { isSettingsTree } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import ShareJsonModal from "@foxglove/studio-base/components/ShareJsonModal";
 import { SidebarContent } from "@foxglove/studio-base/components/SidebarContent";
 import Stack from "@foxglove/studio-base/components/Stack";
@@ -143,14 +143,17 @@ export default function PanelSettings({
     );
   }
 
-  const isNewSchema = "format" in config && config.format === "settings-tree";
+  const configIsSettingsStree = isSettingsTree(config);
 
   return (
-    <SidebarContent disablePadding={isNewSchema} title={`${panelInfo.title} panel settings`}>
+    <SidebarContent
+      disablePadding={configIsSettingsStree}
+      title={`${panelInfo.title} panel settings`}
+    >
       {shareModal}
       <Stack gap={2} justifyContent="flex-start">
         {panelInfo.help != undefined && (
-          <Stack paddingX={isNewSchema ? 2 : 0}>
+          <Stack paddingX={configIsSettingsStree ? 2 : 0}>
             <Typography color="text.secondary">
               See docs{" "}
               <Link
@@ -166,21 +169,19 @@ export default function PanelSettings({
           </Stack>
         )}
         <div>
-          {isNewSchema && (
-            <SettingsEditor settings={config as SettingsTree} updater={settingsUpdater} />
-          )}
-          {!isNewSchema && schema && (
+          {configIsSettingsStree && <SettingsEditor settings={config} updater={settingsUpdater} />}
+          {!configIsSettingsStree && schema && (
             <StrictMode>
               <SchemaEditor configSchema={schema} config={config} saveConfig={saveConfig} />
             </StrictMode>
           )}
-          {!isNewSchema && !schema && (
+          {!configIsSettingsStree && !schema && (
             <Typography color="text.secondary">No additional settings available.</Typography>
           )}
         </div>
         <Stack
-          paddingX={isNewSchema ? 2 : 0}
-          paddingBottom={isNewSchema ? 2 : 0}
+          paddingX={configIsSettingsStree ? 2 : 0}
+          paddingBottom={configIsSettingsStree ? 2 : 0}
           gap={1}
           alignItems="flex-start"
         >

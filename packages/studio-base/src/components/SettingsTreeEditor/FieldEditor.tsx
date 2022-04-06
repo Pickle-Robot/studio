@@ -13,10 +13,10 @@ import {
 } from "@mui/material";
 import { Fragment } from "react";
 
-import { SettingsTreeField } from "./SettingsTree";
 import { ColorPickerInput } from "./inputs/ColorPickerInput";
 import { ColorScalePicker } from "./inputs/ColorScalePicker";
 import { NumberInput } from "./inputs/NumberInput";
+import { SettingsTreeField } from "./types";
 
 const StyledToggleButtonGroup = muiStyled(ToggleButtonGroup)(({ theme }) => ({
   background: theme.palette.grey[200],

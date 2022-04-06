@@ -25,13 +25,24 @@ export type SettingsTreeNode = {
   label?: string;
   fields?: SettingsTreeFields;
   children?: SettingsTreeChildren;
-  icon?: JSX.Element;
 };
 
 export type SettingsTree = {
-  format: "settings-tree";
+  settings: {
+    tree: SettingsTreeNode;
+  };
   showFilter?: boolean;
-} & SettingsTreeNode;
+};
+
+export type SettingsTreeChangeInterceptor = (
+  settings: SettingsTree,
+  path: string[],
+  value: unknown,
+) => SettingsTree;
+
+export function isSettingsTree(val: unknown): val is SettingsTree {
+  return ((val as undefined | { settings?: { tree?: object } }) ?? {}).settings?.tree != undefined;
+}
 
 export function updateSettingsTree(
   previous: SettingsTree,
@@ -39,7 +50,7 @@ export function updateSettingsTree(
   value: unknown,
 ): SettingsTree {
   return produce(previous, (draft) => {
-    let node: undefined | Partial<SettingsTreeNode> = draft;
+    let node: undefined | Partial<SettingsTreeNode> = draft.settings.tree;
     while (node != undefined && path.length > 1) {
       const key = path.shift()!;
       node = node.children?.[key];

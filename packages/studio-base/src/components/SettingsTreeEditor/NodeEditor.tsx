@@ -22,8 +22,8 @@ import { ChangeEvent, useState } from "react";
 import Stack from "@foxglove/studio-base/components/Stack";
 
 import { FieldEditor } from "./FieldEditor";
-import { SettingsTreeNode } from "./SettingsTree";
 import { VisibilityToggle } from "./VisibilityToggle";
+import { SettingsTreeNode } from "./types";
 
 export type NodeEditorProps = {
   defaultOpen?: boolean;

@@ -9,7 +9,7 @@ import { cloneDeep } from "lodash";
 import { PlayerCapabilities } from "@foxglove/studio-base/players/types";
 import PanelSetup from "@foxglove/studio-base/stories/PanelSetup";
 
-import { DefaultConfig } from "./config";
+import { DefaultState } from "./defaultState";
 import TeleopPanel from "./index";
 
 export default {
@@ -33,7 +33,7 @@ export const Unconfigured = (): JSX.Element => {
 };
 
 export const WithConfig = (): JSX.Element => {
-  const config = cloneDeep(DefaultConfig);
-  config.fields.topic.value = "chatter";
-  return <TeleopPanel overrideConfig={config} />;
+  const state = cloneDeep(DefaultState);
+  state.settings.tree.fields.topic.value = "chatter";
+  return <TeleopPanel overrideConfig={state} />;
 };

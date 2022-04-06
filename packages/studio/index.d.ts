@@ -2,6 +2,8 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import { SettingsTreeChangeInterceptor } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
+
 declare module "@foxglove/studio" {
   // Valid types for parameter data (such as rosparams)
   export type ParameterValue =
@@ -30,6 +32,36 @@ declare module "@foxglove/studio" {
     name: string;
     // topic datatype
     datatype: string;
+  };
+
+  export type SettingsTreeFieldValue =
+    | { input: "boolean"; value?: boolean }
+    | { input: "color"; value?: string }
+    | { input: "gradient"; value?: string }
+    | { input: "number"; value?: number }
+    | { input: "select"; value?: string; options: string[] }
+    | { input: "string"; value?: string }
+    | { input: "toggle"; value?: string; options: string[] };
+
+  export type SettingsTreeField = SettingsTreeFieldValue & {
+    label: string;
+    placeholder?: string;
+  };
+
+  export type SettingsTreeFields = Record<string, SettingsTreeField>;
+  export type SettingsTreeChildren = Record<string, SettingsTreeNode>;
+
+  export type SettingsTreeNode = {
+    label?: string;
+    fields?: SettingsTreeFields;
+    children?: SettingsTreeChildren;
+  };
+
+  export type SettingsTree = {
+    settings: {
+      tree: SettingsTreeNode;
+    };
+    showFilter?: boolean;
   };
 
   /**
@@ -174,13 +206,7 @@ declare module "@foxglove/studio" {
     /**
      * Register a change interceptor.
      */
-    setSettingsChangeInterceptor: (
-      interceptor: (
-        previous: Record<string, unknown>,
-        path: string[],
-        value: unknown,
-      ) => Record<string, unknown>,
-    ) => void;
+    setSettingsChangeInterceptor: (interceptor: SettingsTreeChangeInterceptor) => void;
 
     /**
      * Set the value of parameter name to value.

@@ -7,7 +7,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import { AppBar, IconButton, TextField, styled as muiStyled, List, Divider } from "@mui/material";
 import { useState } from "react";
 
-import { SettingsTree } from "@foxglove/studio-base/components/SettingsTreeEditor/SettingsTree";
+import { SettingsTree } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import Stack from "@foxglove/studio-base/components/Stack";
 
 import { NodeEditor } from "./NodeEditor";
@@ -56,7 +56,7 @@ export default function SettingsTreeEditor({
       )}
       <List dense disablePadding>
         <Divider />
-        <NodeEditor path={[]} settings={settings} updateSettings={updater} />
+        <NodeEditor path={[]} settings={settings.settings.tree} updateSettings={updater} />
         <Divider />
       </List>
     </Stack>

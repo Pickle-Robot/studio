@@ -31,6 +31,7 @@ import {
 } from "@foxglove/studio-base/components/MessagePipeline";
 import { usePanelContext } from "@foxglove/studio-base/components/PanelContext";
 import PanelToolbar from "@foxglove/studio-base/components/PanelToolbar";
+import { SettingsTreeChangeInterceptor } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import { useAppConfiguration } from "@foxglove/studio-base/context/AppConfigurationContext";
 import CurrentLayoutContext from "@foxglove/studio-base/context/CurrentLayoutContext";
 import {
@@ -44,7 +45,6 @@ import {
   PlayerCapabilities,
   PlayerState,
 } from "@foxglove/studio-base/players/types";
-import { PanelSettingsTreeChangeInterceptor } from "@foxglove/studio-base/providers/CurrentLayoutProvider";
 import { PanelConfig, SaveConfig } from "@foxglove/studio-base/types/panels";
 import { assertNever } from "@foxglove/studio-base/util/assertNever";
 
@@ -387,7 +387,7 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
       seekPlayback: seekPlayback ? (stamp: number) => seekPlayback(fromSec(stamp)) : undefined,
 
-      setSettingsChangeInterceptor: (interceptor: PanelSettingsTreeChangeInterceptor) => {
+      setSettingsChangeInterceptor: (interceptor: SettingsTreeChangeInterceptor) => {
         registerPanelChangeInterceptor(contextPanelId, interceptor);
       },
 
