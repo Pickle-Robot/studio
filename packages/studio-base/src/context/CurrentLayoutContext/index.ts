@@ -7,10 +7,6 @@ import { getLeaves } from "react-mosaic-component";
 
 import { useShallowMemo } from "@foxglove/hooks";
 import Logger from "@foxglove/log";
-import {
-  SettingsTreeAction,
-  SettingsTreeActionInterceptor,
-} from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import { selectWithUnstableIdentityWarning } from "@foxglove/studio-base/hooks/selectWithUnstableIdentityWarning";
 import useGuaranteedContext from "@foxglove/studio-base/hooks/useGuaranteedContext";
 import useShouldNotChangeOften from "@foxglove/studio-base/hooks/useShouldNotChangeOften";
@@ -45,23 +41,10 @@ export type LayoutState = Readonly<{
 }>;
 
 /**
- * Functions for applying targeted updates for panel settings and registering
- * interceptors to handle actions on panel settings.
- */
-interface IPanelSettingsActions {
-  applyPanelSettingsAction: (panelId: string, action: SettingsTreeAction) => void;
-  registerPanelSettingsActionInterceptor: (
-    panelId: string,
-    interceptor: SettingsTreeActionInterceptor,
-  ) => void;
-  unregisterPanelSettingsActionInterceptor: (panelId: string) => void;
-}
-
-/**
  * Encapsulates the mosaic layout, user nodes, and playback settings (everything considered to be
  * part of a saved "layout") used by the current workspace.
  */
-export interface ICurrentLayout extends IPanelSettingsActions {
+export interface ICurrentLayout {
   addLayoutStateListener: (listener: (_: LayoutState) => void) => void;
   removeLayoutStateListener: (listener: (_: LayoutState) => void) => void;
   addSelectedPanelIdsListener: (listener: (_: readonly string[]) => void) => void;

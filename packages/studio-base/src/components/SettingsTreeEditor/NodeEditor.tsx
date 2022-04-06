@@ -18,6 +18,7 @@ import {
   styled as muiStyled,
 } from "@mui/material";
 import { ChangeEvent, useState } from "react";
+import { DeepReadonly } from "ts-essentials";
 
 import Stack from "@foxglove/studio-base/components/Stack";
 
@@ -34,7 +35,7 @@ export type NodeEditorProps = {
   onClick?: ListItemButtonProps["onClick"];
   path: string[];
   secondaryAction?: ListItemProps["secondaryAction"];
-  settings?: SettingsTreeNode;
+  settings?: DeepReadonly<SettingsTreeNode>;
   updateSettings?: (path: string[], value: unknown) => void;
 };
 

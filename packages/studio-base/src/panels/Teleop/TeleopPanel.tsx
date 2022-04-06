@@ -3,26 +3,96 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { Stack, Typography } from "@mui/material";
-import { isEmpty } from "lodash";
-import { ReactNode, useLayoutEffect, useState } from "react";
+import { set } from "lodash";
+import { ReactNode, useCallback, useEffect, useLayoutEffect, useState } from "react";
+import { DeepPartial } from "ts-essentials";
 
 import { definitions as commonDefs } from "@foxglove/rosmsg-msgs-common";
-import { PanelExtensionContext } from "@foxglove/studio";
-import {
-  SettingsTree,
-  SettingsTreeAction,
-  updateSettingsTree,
-} from "@foxglove/studio-base/components/SettingsTreeEditor/types";
+import { PanelExtensionContext, SettingsTreeAction, SettingsTreeNode } from "@foxglove/studio";
 import ThemeProvider from "@foxglove/studio-base/theme/ThemeProvider";
 
 import DirectionalPad, { DirectionalPadAction } from "./DirectionalPad";
-import { DefaultState } from "./defaultState";
 
 type TeleopPanelProps = {
   context: PanelExtensionContext;
 };
 
-type TeleopState = typeof DefaultState;
+const geometryMsgOptions = [
+  "linear-x",
+  "linear-y",
+  "linear-z",
+  "angular-x",
+  "angular-y",
+  "angular-z",
+];
+
+type Config = {
+  topic: undefined | string;
+  publishRate: number;
+  upButton: { field: string; value: number };
+  downButton: { field: string; value: number };
+  leftButton: { field: string; value: number };
+  rightButton: { field: string; value: number };
+};
+
+function buildSettingsTree(config: Config): SettingsTreeNode {
+  return {
+    fields: {
+      publishRate: { label: "Publish Rate", input: "number", value: config.publishRate },
+      topic: { label: "Topic", input: "string", value: config.topic },
+    },
+    children: {
+      upButton: {
+        label: "Up Button",
+        fields: {
+          field: {
+            label: "Field",
+            input: "select",
+            value: config.upButton.field,
+            options: geometryMsgOptions,
+          },
+          value: { label: "Value", input: "number", value: config.upButton.value },
+        },
+      },
+      downButton: {
+        label: "Down Button",
+        fields: {
+          field: {
+            label: "Field",
+            input: "select",
+            value: config.upButton.field,
+            options: geometryMsgOptions,
+          },
+          value: { label: "Value", input: "number", value: config.downButton.value },
+        },
+      },
+      leftButton: {
+        label: "Left Button",
+        fields: {
+          field: {
+            label: "Field",
+            input: "select",
+            value: config.upButton.field,
+            options: geometryMsgOptions,
+          },
+          value: { label: "Value", input: "number", value: config.leftButton.value },
+        },
+      },
+      rightButton: {
+        label: "Right Button",
+        fields: {
+          field: {
+            label: "Field",
+            input: "select",
+            value: config.upButton.field,
+            options: geometryMsgOptions,
+          },
+          value: { label: "Value", input: "number", value: config.rightButton.value },
+        },
+      },
+    },
+  };
+}
 
 function ErrorMessage({
   children,
@@ -50,41 +120,60 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
 
   const [currentAction, setCurrentAction] = useState<DirectionalPadAction | undefined>();
 
-  const [panelState, setPanelState] = useState<undefined | TeleopState>(
-    (context.initialState as undefined | TeleopState) ?? DefaultState,
-  );
+  // resolve an initial config which may have some missing fields into a full config
+  const [config, setConfig] = useState<Config>(() => {
+    const partialConfig = context.initialState as DeepPartial<Config>;
+
+    const {
+      topic,
+      publishRate = 1,
+      upButton: { field: upField = "linear-x", value: upValue = 1 } = {},
+      downButton: { field: downField = "linear-x", value: downValue = -1 } = {},
+      leftButton: { field: leftField = "angular-z", value: leftValue = 1 } = {},
+      rightButton: { field: rightField = "angular-z", value: rightValue = -1 } = {},
+    } = partialConfig;
+
+    return {
+      topic,
+      publishRate,
+      upButton: { field: upField, value: upValue },
+      downButton: { field: downField, value: downValue },
+      leftButton: { field: leftField, value: leftValue },
+      rightButton: { field: rightField, value: rightValue },
+    };
+  });
+
+  const settingsActionHandler = useCallback((action: SettingsTreeAction) => {
+    setConfig((previous) => {
+      const newConfig = { ...previous };
+      set(newConfig, action.payload.path, action.payload.value);
+      return newConfig;
+    });
+  }, []);
 
   // setup context render handler and render done handling
   const [renderDone, setRenderDone] = useState<() => void>(() => () => {});
   const [colorScheme, setColorScheme] = useState<"dark" | "light">("light");
   useLayoutEffect(() => {
-    const interceptor = (previous: SettingsTree, action: SettingsTreeAction) => {
-      return updateSettingsTree(previous, action.payload.path, action.payload.value);
-    };
-    context.setSettingsActionInterceptor(interceptor);
-
-    context.watch("colorScheme");
-    context.watch("configuration");
     context.watch("topics");
+    context.watch("colorScheme");
 
     context.onRender = (renderState, done) => {
       setRenderDone(() => done);
       if (renderState.colorScheme) {
         setColorScheme(renderState.colorScheme);
       }
-
-      if (isEmpty(renderState.configuration)) {
-        saveState(DefaultState);
-      } else {
-        setPanelState(renderState.configuration as TeleopState);
-      }
     };
-  }, [context, saveState]);
+  }, [context, settingsActionHandler]);
 
-  const settings = panelState?.settings.tree;
+  useEffect(() => {
+    const tree = buildSettingsTree(config);
+    context.publishPanelSettingsTree({ settings: tree, actionHandler: settingsActionHandler });
+    saveState(config);
+  }, [config, context, saveState, settingsActionHandler]);
 
   // advertise topic
-  const currentTopic = settings?.fields.topic.value;
+  const { topic: currentTopic } = config;
   useLayoutEffect(() => {
     if (!currentTopic) {
       return;
@@ -145,39 +234,26 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
 
     switch (currentAction) {
       case DirectionalPadAction.UP:
-        setFieldValue(
-          settings.children.upButton.fields.field.value,
-          settings.children.upButton.fields.value.value,
-        );
+        setFieldValue(config.upButton.field, config.upButton.value);
         break;
       case DirectionalPadAction.DOWN:
-        setFieldValue(
-          settings.children.downButton.fields.field.value,
-          settings.children.downButton.fields.value.value,
-        );
+        setFieldValue(config.downButton.field, config.downButton.value);
         break;
       case DirectionalPadAction.LEFT:
-        setFieldValue(
-          settings.children.leftButton.fields.field.value,
-          settings.children.leftButton.fields.value.value,
-        );
+        setFieldValue(config.leftButton.field, config.leftButton.value);
         break;
       case DirectionalPadAction.RIGHT:
-        setFieldValue(
-          settings.children.rightButton.fields.field.value,
-          settings.children.rightButton.fields.value.value,
-        );
+        setFieldValue(config.rightButton.field, config.rightButton.value);
         break;
-      case DirectionalPadAction.STOP:
-        break;
+      default:
     }
 
     // don't publish if rate is 0 or negative - this is a config error on user's part
-    if (settings.fields.publishRate.value <= 0) {
+    if (config.publishRate <= 0) {
       return;
     }
 
-    const intervalMs = (1000 * 1) / settings.fields.publishRate.value;
+    const intervalMs = (1000 * 1) / config.publishRate;
     context.publish?.(currentTopic, message);
     const intervalHandle = setInterval(() => {
       context.publish?.(currentTopic, message);
@@ -186,14 +262,13 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
     return () => {
       clearInterval(intervalHandle);
     };
-  }, [context, panelState, currentTopic, currentAction, settings]);
+  }, [context, config, currentTopic, currentAction]);
 
   useLayoutEffect(() => {
     renderDone();
   }, [renderDone]);
 
-  const canPublish =
-    context.publish != undefined && settings != undefined && settings.fields.publishRate.value > 0;
+  const canPublish = context.publish != undefined && config.publishRate > 0;
   const hasTopic = Boolean(currentTopic);
   const enabled = canPublish && hasTopic;
 
@@ -204,7 +279,9 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
           <ErrorMessage message="Please connect to a datasource that supports publishing in order to use this panel." />
         )}
         {canPublish && !hasTopic && (
-          <ErrorMessage message="Please select a topic in the panel settings in order to use this panel." />
+          <ErrorMessage message="Please select a topic in the panel settings in order to use this panel.">
+            {/* <PrimaryButton onClick={() => setShowSettings(true)}>Open Panel Settings</PrimaryButton> */}
+          </ErrorMessage>
         )}
         {enabled && <DirectionalPad onAction={setCurrentAction} disabled={!enabled} />}
       </Stack>

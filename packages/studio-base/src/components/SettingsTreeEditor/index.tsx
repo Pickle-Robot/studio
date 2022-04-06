@@ -5,7 +5,8 @@
 import ClearIcon from "@mui/icons-material/Clear";
 import SearchIcon from "@mui/icons-material/Search";
 import { AppBar, IconButton, TextField, styled as muiStyled, List, Divider } from "@mui/material";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { DeepReadonly } from "ts-essentials";
 
 import { SettingsTree } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import Stack from "@foxglove/studio-base/components/Stack";
@@ -21,42 +22,45 @@ const StyledAppBar = muiStyled(AppBar, { skipSx: true })(({ theme }) => ({
 
 export default function SettingsTreeEditor({
   settings,
-  updater,
 }: {
-  settings: SettingsTree;
-  updater: (path: string[], value: unknown) => void;
+  settings: DeepReadonly<SettingsTree>;
 }): JSX.Element {
   const [filterText, setFilterText] = useState<string>("");
 
+  const updater = useCallback(
+    (path: string[], value: unknown) => {
+      settings.actionHandler({ action: "update", payload: { path, value } });
+    },
+    [settings],
+  );
+
   return (
     <Stack fullHeight>
-      {settings.showFilter === true && (
-        <StyledAppBar position="sticky" color="default" elevation={0}>
-          <TextField
-            onChange={(event) => setFilterText(event.target.value)}
-            value={filterText}
-            variant="filled"
-            fullWidth
-            placeholder="Filter by layer name"
-            InputProps={{
-              startAdornment: <SearchIcon fontSize="small" />,
-              endAdornment: filterText && (
-                <IconButton
-                  size="small"
-                  title="Clear search"
-                  onClick={() => setFilterText("")}
-                  edge="end"
-                >
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              ),
-            }}
-          />
-        </StyledAppBar>
-      )}
+      <StyledAppBar position="sticky" color="default" elevation={0}>
+        <TextField
+          onChange={(event) => setFilterText(event.target.value)}
+          value={filterText}
+          variant="filled"
+          fullWidth
+          placeholder="Filter by layer name"
+          InputProps={{
+            startAdornment: <SearchIcon fontSize="small" />,
+            endAdornment: filterText && (
+              <IconButton
+                size="small"
+                title="Clear search"
+                onClick={() => setFilterText("")}
+                edge="end"
+              >
+                <ClearIcon fontSize="small" />
+              </IconButton>
+            ),
+          }}
+        />
+      </StyledAppBar>
       <List dense disablePadding>
         <Divider />
-        <NodeEditor path={[]} settings={settings.settings.tree} updateSettings={updater} />
+        <NodeEditor path={[]} settings={settings.settings} updateSettings={updater} />
         <Divider />
       </List>
     </Stack>

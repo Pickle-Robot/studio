@@ -6,6 +6,7 @@ import { useTheme } from "@fluentui/react";
 import {
   CSSProperties,
   useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -32,15 +33,14 @@ import {
 } from "@foxglove/studio-base/components/MessagePipeline";
 import { usePanelContext } from "@foxglove/studio-base/components/PanelContext";
 import PanelToolbar from "@foxglove/studio-base/components/PanelToolbar";
-import { SettingsTreeActionInterceptor } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
+import { SettingsTree } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import { useAppConfiguration } from "@foxglove/studio-base/context/AppConfigurationContext";
-import CurrentLayoutContext from "@foxglove/studio-base/context/CurrentLayoutContext";
 import {
   useClearHoverValue,
   useHoverValue,
   useSetHoverValue,
 } from "@foxglove/studio-base/context/HoverValueContext";
-import useGuaranteedContext from "@foxglove/studio-base/hooks/useGuaranteedContext";
+import { PanelSettingsEditorContext } from "@foxglove/studio-base/context/PanelSettingsEditorContext";
 import {
   AdvertiseOptions,
   PlayerCapabilities,
@@ -99,7 +99,7 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
   const requestBackfill = useMessagePipeline(selectRequestBackfill);
   const capabilities = useMessagePipeline(selectCapabilities);
   const seekPlayback = useMessagePipeline(selectSeekPlayback);
-  const { id: contextPanelId, openSiblingPanel } = usePanelContext();
+  const { openSiblingPanel } = usePanelContext();
 
   const [panelId] = useState(() => uuid());
 
@@ -109,12 +109,6 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
   const currentAppSettingsRef = useRef(new Map<string, AppSettingValue>());
   const [subscribedAppSettings, setSubscribedAppSettings] = useState<string[]>([]);
   const previousPlayerStateRef = useRef<PlayerState | undefined>(undefined);
-
-  const registerPanelSettingsActionInterceptor =
-    useGuaranteedContext(CurrentLayoutContext).registerPanelSettingsActionInterceptor;
-
-  const unregisterPanelSettingsActionInterceptor =
-    useGuaranteedContext(CurrentLayoutContext).unregisterPanelSettingsActionInterceptor;
 
   // To avoid updating extended message stores once message pipeline blocks are no longer updating
   // we store a ref to the blocks and only update stores when the ref is different
@@ -155,9 +149,9 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
   const appConfiguration = useAppConfiguration();
 
-  useEffect(() => {
-    configRef.current = config;
-  }, [config]);
+  const { id: panelLayoutId } = usePanelContext();
+
+  const { publishPanelSettingsTree } = useContext(PanelSettingsEditorContext);
 
   // renderPanelImpl invokes the panel extension context's render function with updated
   // render state fields.
@@ -185,14 +179,7 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
     let shouldRender = false;
 
     // The render state stats with the previous render state and changes are applied as detected
-    const renderState = prevRenderState.current;
-
-    if (watchedFieldsRef.current.has("configuration")) {
-      if (renderState.configuration !== configRef.current) {
-        renderState.configuration = configRef.current;
-        shouldRender = true;
-      }
-    }
+    const renderState: RenderState = prevRenderState.current;
 
     if (watchedFieldsRef.current.has("currentFrame")) {
       const currentFrame = ctx?.messageEventsBySubscriberId.get(panelId);
@@ -365,7 +352,7 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
   useMessagePipeline(messagePipelineSelector);
 
-  useUnmount(() => unregisterPanelSettingsActionInterceptor(contextPanelId));
+  useUnmount(() => publishPanelSettingsTree(panelLayoutId, undefined));
 
   type PartialPanelExtensionContext = Omit<PanelExtensionContext, "panelElement">;
   const partialExtensionContext = useMemo<PartialPanelExtensionContext>(() => {
@@ -391,11 +378,11 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
       layout,
 
-      seekPlayback: seekPlayback ? (stamp: number) => seekPlayback(fromSec(stamp)) : undefined,
-
-      setSettingsActionInterceptor: (interceptor: SettingsTreeActionInterceptor) => {
-        registerPanelSettingsActionInterceptor(contextPanelId, interceptor);
+      publishPanelSettingsTree: (settings: SettingsTree) => {
+        publishPanelSettingsTree(panelLayoutId, settings);
       },
+
+      seekPlayback: seekPlayback ? (stamp: number) => seekPlayback(fromSec(stamp)) : undefined,
 
       setParameter: (name: string, value: ParameterValue) => {
         const ctx = latestPipelineContextRef.current;
@@ -499,17 +486,17 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
       },
     };
   }, [
-    capabilities,
-    clearHoverValue,
-    contextPanelId,
-    openSiblingPanel,
-    panelId,
-    registerPanelSettingsActionInterceptor,
-    requestBackfill,
     saveConfig,
     seekPlayback,
+    capabilities,
+    openSiblingPanel,
+    publishPanelSettingsTree,
+    panelLayoutId,
+    clearHoverValue,
     setHoverValue,
     setSubscriptions,
+    panelId,
+    requestBackfill,
   ]);
 
   const panelContainerRef = useRef<HTMLDivElement>(ReactNull);

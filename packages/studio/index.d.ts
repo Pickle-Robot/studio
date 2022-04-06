@@ -32,6 +32,10 @@ declare module "@foxglove/studio" {
     datatype: string;
   };
 
+  /**
+   * A settings tree is a tree of panel settings that can be automatically managed by
+   * a default user interface in Studio.
+   */
   export type SettingsTreeFieldValue =
     | { input: "boolean"; value?: boolean }
     | { input: "color"; value?: string }
@@ -55,30 +59,15 @@ declare module "@foxglove/studio" {
     children?: SettingsTreeChildren;
   };
 
-  /**
-   * A settings tree is a tree of panel settings that can be automatically managed by
-   * a default user interface in Studio.
-   */
-  export type SettingsTree = {
-    settings: {
-      tree: SettingsTreeNode;
-    };
-    showFilter?: boolean;
-  };
-
   export type SettingsTreeAction = {
     action: "update";
     payload: { path: string[]; value: unknown };
   };
 
-  /**
-   * Panels can let Studio automatically handle updates to the settings tree or they can register
-   * an interceptor to respond to actions on the settings tree like field updates.
-   */
-  export type SettingsTreeActionInterceptor = (
-    settings: SettingsTree,
-    action: SettingsTreeAction,
-  ) => SettingsTree;
+  export type SettingsTree = {
+    actionHandler: (action: SettingsTreeAction) => void;
+    settings: SettingsTreeNode;
+  };
 
   /**
    * A message event frames message data with the topic and receive time
@@ -206,6 +195,11 @@ declare module "@foxglove/studio" {
     readonly layout: LayoutActions;
 
     /**
+     * Publish a settings UI description.
+     */
+    publishPanelSettingsTree: (settings: SettingsTree) => void;
+
+    /**
      * Subscribe to updates on this field within the render state. Render will only be invoked when
      * this field changes.
      */
@@ -218,11 +212,6 @@ declare module "@foxglove/studio" {
      * The state value should be JSON serializable.
      */
     saveState: (state: Partial<unknown>) => void;
-
-    /**
-     * Register a change interceptor.
-     */
-    setSettingsActionInterceptor: (interceptor: SettingsTreeActionInterceptor) => void;
 
     /**
      * Set the value of parameter name to value.

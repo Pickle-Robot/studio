@@ -12,6 +12,7 @@ import {
   TextField,
 } from "@mui/material";
 import { Fragment } from "react";
+import { DeepReadonly } from "ts-essentials";
 
 import { ColorPickerInput } from "./inputs/ColorPickerInput";
 import { ColorScalePicker } from "./inputs/ColorScalePicker";
@@ -48,7 +49,7 @@ export function FieldEditor({
   field,
   update,
 }: {
-  field: SettingsTreeField;
+  field: DeepReadonly<SettingsTreeField>;
   update: (value: unknown) => void;
 }): JSX.Element {
   return (

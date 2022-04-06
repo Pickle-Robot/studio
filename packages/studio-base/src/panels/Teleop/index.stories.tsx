@@ -4,12 +4,10 @@
 
 import { action } from "@storybook/addon-actions";
 import { Story } from "@storybook/react";
-import { cloneDeep } from "lodash";
 
 import { PlayerCapabilities } from "@foxglove/studio-base/players/types";
 import PanelSetup from "@foxglove/studio-base/stories/PanelSetup";
 
-import { DefaultState } from "./defaultState";
 import TeleopPanel from "./index";
 
 export default {
@@ -31,9 +29,6 @@ export default {
 export const Unconfigured = (): JSX.Element => {
   return <TeleopPanel />;
 };
-
-export const WithConfig = (): JSX.Element => {
-  const state = cloneDeep(DefaultState);
-  state.settings.tree.fields.topic.value = "chatter";
-  return <TeleopPanel overrideConfig={state} />;
+export const WithTopic = (): JSX.Element => {
+  return <TeleopPanel overrideConfig={{ topic: "/abc" }} />;
 };

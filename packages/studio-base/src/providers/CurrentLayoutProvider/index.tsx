@@ -10,12 +10,6 @@ import { v4 as uuidv4 } from "uuid";
 
 import { useShallowMemo } from "@foxglove/hooks";
 import Logger from "@foxglove/log";
-import {
-  isSettingsTree,
-  SettingsTreeAction,
-  SettingsTreeActionInterceptor,
-  updateSettingsTree,
-} from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import { useAnalytics } from "@foxglove/studio-base/context/AnalyticsContext";
 import CurrentLayoutContext, {
   ICurrentLayout,
@@ -274,46 +268,6 @@ export default function CurrentLayoutProvider({
     }
   }, [getUserProfile, layoutManager, setSelectedLayoutId]);
 
-  const panelSettingsActionInterceptors = useRef(new Map<string, SettingsTreeActionInterceptor>());
-
-  const registerPanelSettingsActionInterceptor = useCallback(
-    (panelId: string, interceptor: SettingsTreeActionInterceptor) => {
-      panelSettingsActionInterceptors.current.set(panelId, interceptor);
-    },
-    [],
-  );
-
-  const unregisterPanelSettingsActionInterceptor = useCallback((panelId: string) => {
-    panelSettingsActionInterceptors.current.delete(panelId);
-  }, []);
-
-  const applyPanelSettingsAction = useCallback(
-    (panelId: string, action: SettingsTreeAction) => {
-      const existingConfig = layoutStateRef.current.selectedLayout?.data?.configById[panelId];
-      if (!existingConfig) {
-        return;
-      }
-      const interceptor = panelSettingsActionInterceptors.current.get(panelId);
-      const settingsTree = isSettingsTree(existingConfig);
-      const changedConfig = settingsTree
-        ? interceptor
-          ? interceptor(existingConfig, action)
-          : updateSettingsTree(existingConfig, action.payload.path, action.payload.value)
-        : existingConfig; // don't try to update non-settings trees
-      const payload: SaveConfigsPayload = {
-        configs: [
-          {
-            id: panelId,
-            config: changedConfig,
-            override: true,
-          },
-        ],
-      };
-      performAction({ type: "SAVE_PANEL_CONFIGS", payload });
-    },
-    [performAction],
-  );
-
   const actions: ICurrentLayout["actions"] = useMemo(
     () => ({
       setSelectedLayoutId,
@@ -384,9 +338,6 @@ export default function CurrentLayoutProvider({
     removeLayoutStateListener,
     addSelectedPanelIdsListener,
     removeSelectedPanelIdsListener,
-    applyPanelSettingsAction,
-    registerPanelSettingsActionInterceptor,
-    unregisterPanelSettingsActionInterceptor,
     mosaicId,
     getSelectedPanelIds,
     setSelectedPanelIds,

@@ -3,7 +3,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { Button, Link, SvgIcon, Typography } from "@mui/material";
-import { StrictMode, useCallback, useMemo, useState } from "react";
+import { StrictMode, useCallback, useContext, useMemo, useState } from "react";
 import { useAsync, useUnmount } from "react-use";
 
 import { useConfigById } from "@foxglove/studio-base/PanelAPI";
@@ -12,7 +12,7 @@ import { isSettingsTree } from "@foxglove/studio-base/components/SettingsTreeEdi
 import ShareJsonModal from "@foxglove/studio-base/components/ShareJsonModal";
 import { SidebarContent } from "@foxglove/studio-base/components/SidebarContent";
 import Stack from "@foxglove/studio-base/components/Stack";
-import CurrentLayoutContext, {
+import {
   LayoutState,
   useCurrentLayoutActions,
   useCurrentLayoutSelector,
@@ -20,8 +20,8 @@ import CurrentLayoutContext, {
 } from "@foxglove/studio-base/context/CurrentLayoutContext";
 import { useHelpInfo } from "@foxglove/studio-base/context/HelpInfoContext";
 import { usePanelCatalog } from "@foxglove/studio-base/context/PanelCatalogContext";
+import { PanelSettingsEditorContext } from "@foxglove/studio-base/context/PanelSettingsEditorContext";
 import { useWorkspace } from "@foxglove/studio-base/context/WorkspaceContext";
-import useGuaranteedContext from "@foxglove/studio-base/hooks/useGuaranteedContext";
 import { PanelConfig } from "@foxglove/studio-base/types/panels";
 import { TAB_PANEL_TYPE } from "@foxglove/studio-base/util/globalConstants";
 import { getPanelTypeFromId } from "@foxglove/studio-base/util/layout";
@@ -49,9 +49,6 @@ export default function PanelSettings({
       setSelectedPanelIds([]);
     }
   });
-
-  const applyPanelSettingsAction =
-    useGuaranteedContext(CurrentLayoutContext).applyPanelSettingsAction;
 
   const panelCatalog = usePanelCatalog();
   const { getCurrentLayoutState: getCurrentLayout, savePanelConfigs } = useCurrentLayoutActions();
@@ -88,13 +85,11 @@ export default function PanelSettings({
 
   const [config, saveConfig] = useConfigById<Record<string, unknown>>(selectedPanelId);
 
-  const settingsUpdater = useCallback(
-    (path: string[], value: unknown) => {
-      if (selectedPanelId) {
-        applyPanelSettingsAction(selectedPanelId, { action: "update", payload: { path, value } });
-      }
-    },
-    [applyPanelSettingsAction, selectedPanelId],
+  const { panelSettingsTrees } = useContext(PanelSettingsEditorContext);
+
+  const settingsTree = useMemo(
+    () => (selectedPanelId ? panelSettingsTrees[selectedPanelId] : undefined),
+    [panelSettingsTrees, selectedPanelId],
   );
 
   const { value: schema, error } = useAsync(async () => {
@@ -169,13 +164,13 @@ export default function PanelSettings({
           </Stack>
         )}
         <div>
-          {configIsSettingsStree && <SettingsEditor settings={config} updater={settingsUpdater} />}
-          {!configIsSettingsStree && schema && (
+          {settingsTree && <SettingsEditor settings={settingsTree} />}
+          {!settingsTree && schema && (
             <StrictMode>
               <SchemaEditor configSchema={schema} config={config} saveConfig={saveConfig} />
             </StrictMode>
           )}
-          {!configIsSettingsStree && !schema && (
+          {!settingsTree && !schema && (
             <Typography color="text.secondary">No additional settings available.</Typography>
           )}
         </div>

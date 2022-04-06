@@ -5,7 +5,7 @@
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { IconButton, TextFieldProps, TextField, styled as muiStyled } from "@mui/material";
-import { ChangeEvent, ReactNode, useState } from "react";
+import { ReactNode, useState } from "react";
 import { useKeyPress } from "react-use";
 
 import { fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
@@ -55,28 +55,23 @@ export function NumberInput(
   } & TextFieldProps,
 ): JSX.Element {
   const { value, iconDown, iconUp, increment = 1 } = props;
-  const [_value, setValue] = useState<number>(value);
 
-  const [shiftPressed] = useKeyPress("Shift");
+  // const [shiftPressed] = useKeyPress("Shift");
 
-  const incrementAmount = shiftPressed ? increment * 10 : increment;
-
-  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setValue(Number(event.target.value));
-  };
+  // const incrementAmount = shiftPressed ? increment * 10 : increment;
 
   return (
     <StyledTextField
       {...props}
-      value={_value}
-      onChange={handleChange}
+      value={value}
+      onChange={props.onChange}
       type="number"
       InputProps={{
         startAdornment: (
           <StyledIconButton
             size="small"
             edge="start"
-            onClick={() => setValue(_value - incrementAmount)}
+            // onClick={() => setValue(_value - incrementAmount)}
           >
             {iconDown ?? <ChevronLeftIcon fontSize="small" />}
           </StyledIconButton>
@@ -85,7 +80,7 @@ export function NumberInput(
           <StyledIconButton
             size="small"
             edge="end"
-            onClick={() => setValue(_value + incrementAmount)}
+            // onClick={() => setValue(_value + incrementAmount)}
           >
             {iconUp ?? <ChevronRightIcon fontSize="small" />}
           </StyledIconButton>
