@@ -22,6 +22,23 @@ const DefaultSettings: SettingsTreeNode = {
         color: { label: "Color", value: "#000000", input: "color" },
       },
     },
+    threeDimensionalModel: {
+      label: "3D Model",
+      fields: {
+        color: {
+          label: "Color",
+          input: "color",
+          value: "#9480ed",
+        },
+        url: {
+          label: "Model URL (URDF)",
+          input: "string",
+          placeholder: "https://example.com/model.urdf",
+          value: "",
+          help: "URL pointing to a Unified Robot Description Format (URDF) XML file. For ROS users, we also support package:// URLs (loaded from the local filesystem) in our desktop app.",
+        },
+      },
+    },
     map: {
       label: "Map",
       fields: {

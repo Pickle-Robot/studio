@@ -8,6 +8,7 @@ export function VisibilityToggle(props: CheckboxProps): JSX.Element {
   return (
     <Checkbox
       {...props}
+      title="Toggle visibility"
       icon={
         <SvgIcon viewBox="0 0 16 16" color="disabled">
           {/* Eye open */}

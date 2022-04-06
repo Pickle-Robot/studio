@@ -84,7 +84,7 @@ const LayerOptions = muiStyled("div", {
   indent: number;
 }>(({ theme, visible, indent = 0 }) => ({
   display: "grid",
-  gridTemplateColumns: "1fr 200px",
+  gridTemplateColumns: "minmax(128px, 1fr) 200px",
   gridAutoRows: 30,
   padding: theme.spacing(0.5, 1.5, 1),
   paddingLeft:
@@ -93,7 +93,7 @@ const LayerOptions = muiStyled("div", {
     (indent === 2 && theme.spacing(2 * indent + 2.5)) ||
     (indent === 3 && theme.spacing(3 * indent + 1)) ||
     theme.spacing(1),
-  columnGap: theme.spacing(1.5),
+  columnGap: theme.spacing(0.5),
   rowGap: theme.spacing(0.25),
   alignItems: "center",
   opacity: visible ? 1 : 0.6,

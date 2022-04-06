@@ -2,6 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   ToggleButton,
   ToggleButtonGroup,
@@ -10,9 +11,12 @@ import {
   MenuItem,
   Select,
   TextField,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
-import { Fragment } from "react";
 import { DeepReadonly } from "ts-essentials";
+
+import Stack from "@foxglove/studio-base/components/Stack";
 
 import { ColorPickerInput } from "./inputs/ColorPickerInput";
 import { ColorScalePicker } from "./inputs/ColorScalePicker";
@@ -53,13 +57,25 @@ export function FieldEditor({
   update: (value: unknown) => void;
 }): JSX.Element {
   return (
-    <Fragment>
-      <Typography variant="subtitle2" color="text.secondary" noWrap title={field.label}>
-        {field.label}
-      </Typography>
-      {/* <IconButton edge="end" size="small">
-            <DataObjectIcon fontSize="small" />
-          </IconButton> */}
+    <>
+      <Stack direction="row" alignItems="center">
+        <Typography
+          title={field.label}
+          variant="subtitle2"
+          color="text.secondary"
+          noWrap
+          flex="auto"
+        >
+          {field.label}
+        </Typography>
+        {field.help && (
+          <Tooltip arrow title={field.help}>
+            <IconButton size="small" color="secondary">
+              <HelpOutlineIcon fontSize="inherit" />
+            </IconButton>
+          </Tooltip>
+        )}
+      </Stack>
       <div>
         {field.input === "number" && (
           <NumberInput
@@ -124,6 +140,6 @@ export function FieldEditor({
           />
         )}
       </div>
-    </Fragment>
+    </>
   );
 }

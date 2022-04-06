@@ -14,6 +14,7 @@ export type SettingsTreeFieldValue =
 export type SettingsTreeField = SettingsTreeFieldValue & {
   label: string;
   placeholder?: string;
+  help?: string;
 };
 
 export type SettingsTreeFields = Record<string, SettingsTreeField>;
