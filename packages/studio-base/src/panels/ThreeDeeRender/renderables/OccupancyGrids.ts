@@ -290,14 +290,14 @@ function createMaterial(
 
 function createPickingMaterial(texture: THREE.DataTexture): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
-    vertexShader: `
+    vertexShader: /* glsl */ `
       varying vec2 vUv;
       void main() {
         vUv = uv;
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `,
-    fragmentShader: `
+    fragmentShader: /* glsl */ `
       uniform sampler2D map;
       uniform vec4 objectId;
       varying vec2 vUv;

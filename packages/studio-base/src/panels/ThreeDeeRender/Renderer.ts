@@ -328,7 +328,8 @@ export class Renderer extends EventEmitter<RendererEvents> {
     selectObject(selectedObj);
     log.debug(`Selected object ${selectedObj.name}`);
 
-    // Re-render with the selected object
+    // Re-render with the selected object. Disable this when setting debug=true
+    // in Picker so the debug render stays on the screen
     this.animationFrame();
   };
 }

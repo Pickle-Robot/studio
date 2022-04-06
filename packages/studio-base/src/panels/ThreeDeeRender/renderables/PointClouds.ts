@@ -298,14 +298,14 @@ function createPickingMaterial(settings: PointCloudSettings): THREE.ShaderMateri
 
   const pointSize = Math.max(settings.pointSize, MIN_PICKING_POINT_SIZE);
   return new THREE.ShaderMaterial({
-    vertexShader: `
+    vertexShader: /* glsl */ `
       uniform float pointSize;
       void main() {
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         gl_PointSize = pointSize;
       }
     `,
-    fragmentShader: `
+    fragmentShader: /* glsl */ `
       uniform vec4 objectId;
       void main() {
         gl_FragColor = objectId;

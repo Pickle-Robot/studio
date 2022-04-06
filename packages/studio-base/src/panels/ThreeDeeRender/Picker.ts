@@ -156,8 +156,7 @@ export class Picker {
     const geometry = renderItem.geometry;
     if (
       !geometry || // Skip if geometry is not defined
-      material.type === "LineBasicMaterial" || // Skip marker outlines
-      material.type === "LineMaterial" || // TODO(jhurliman): Render this, requires a custom fragment shader
+      renderItem.object.userData.picking === false || // Skip if object is marked no picking
       !this.shouldPickObjectCB(object) // Skip if user callback returns false
     ) {
       return;
@@ -182,22 +181,26 @@ export class Picker {
       }
       renderMaterial = new THREE.ShaderMaterial({
         vertexShader,
-        fragmentShader: `
+        fragmentShader: /* glsl */ `
            uniform vec4 objectId;
            void main() {
              gl_FragColor = objectId;
            }
          `,
         side: THREE.DoubleSide,
+        uniforms: { objectId: { value: [1.0, 1.0, 1.0, 1.0] } },
       });
-      renderMaterial.uniforms = { objectId: { value: [1.0, 1.0, 1.0, 1.0] } };
       this.materialCache.set(index, renderMaterial);
     }
     if (sprite === 1) {
       renderMaterial.uniforms.rotation = { value: (material as THREE.SpriteMaterial).rotation };
       renderMaterial.uniforms.center = { value: (object as THREE.Sprite).center };
     }
-    renderMaterial.uniforms.objectId!.value = [
+    const iObjectId = renderMaterial.uniforms.objectId;
+    if (!iObjectId) {
+      throw new Error(`objectId uniform not found in picking material`);
+    }
+    iObjectId.value = [
       ((objId >> 24) & 255) / 255,
       ((objId >> 16) & 255) / 255,
       ((objId >> 8) & 255) / 255,

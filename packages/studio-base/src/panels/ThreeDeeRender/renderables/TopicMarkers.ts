@@ -97,6 +97,7 @@ export class TopicMarkers extends THREE.Object3D {
           currentTime,
           srcTime,
         );
+        renderable.visible = updated;
         if (!updated) {
           const message = missingTransformMessage(renderFrameId, fixedFrameId, frameId);
           this.renderer.layerErrors.addToTopic(
@@ -104,6 +105,8 @@ export class TopicMarkers extends THREE.Object3D {
             MISSING_TRANSFORM,
             message,
           );
+        } else {
+          renderable.startFrame(currentTime, renderFrameId, fixedFrameId);
         }
       }
     }

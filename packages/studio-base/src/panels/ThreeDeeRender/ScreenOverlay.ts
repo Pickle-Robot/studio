@@ -15,11 +15,11 @@ export class ScreenOverlay extends THREE.Object3D {
       depthTest: false,
       depthWrite: false,
       uniforms: {},
-      vertexShader: `
+      vertexShader: /* glsl */ `
         void main() {
           gl_Position = vec4(position.xy, 0.0, 1.0);
         }`,
-      fragmentShader: `
+      fragmentShader: /* glsl */ `
         void main() {
           gl_FragColor = vec4(0.0, 0.0, 0.0, 0.75);
         }
