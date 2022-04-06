@@ -5,7 +5,7 @@
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { IconButton, TextFieldProps, TextField, styled as muiStyled } from "@mui/material";
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { useKeyPress } from "react-use";
 
 import { fonts } from "@foxglove/studio-base/util/sharedStyleConstants";
@@ -54,9 +54,10 @@ export function NumberInput(
     value: number;
   } & TextFieldProps,
 ): JSX.Element {
-  const { value, iconDown, iconUp, increment = 1 } = props;
+  // const { value, iconDown, iconUp, increment = 1 } = props;
+  const { value, iconDown, iconUp } = props;
 
-  // const [shiftPressed] = useKeyPress("Shift");
+  const [_shiftPressed] = useKeyPress("Shift");
 
   // const incrementAmount = shiftPressed ? increment * 10 : increment;
 

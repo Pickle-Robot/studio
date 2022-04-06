@@ -3,7 +3,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
 import { Button, Link, SvgIcon, Typography } from "@mui/material";
-import { StrictMode, useCallback, useContext, useMemo, useState } from "react";
+import { StrictMode, useContext, useMemo, useState } from "react";
 import { useAsync, useUnmount } from "react-use";
 
 import { useConfigById } from "@foxglove/studio-base/PanelAPI";
