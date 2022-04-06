@@ -28,7 +28,7 @@ export type RendererEvents = {
   startFrame: (currentTime: bigint, renderer: Renderer) => void;
   endFrame: (currentTime: bigint, renderer: Renderer) => void;
   cameraMove: (renderer: Renderer) => void;
-  renderableSelected: (renderable: THREE.Object3D, renderer: Renderer) => void;
+  renderableSelected: (renderable: THREE.Object3D | undefined, renderer: Renderer) => void;
   transformTreeUpdated: (renderer: Renderer) => void;
   showLabel: (labelId: string, labelMarker: Marker, renderer: Renderer) => void;
   removeLabel: (labelId: string, renderer: Renderer) => void;
@@ -305,6 +305,7 @@ export class Renderer extends EventEmitter<RendererEvents> {
     const objectId = this.picker.pick(cursorCoords.x, cursorCoords.y);
     if (objectId < 0) {
       log.debug(`Background selected`);
+      this.emit("renderableSelected", undefined, this);
       return;
     }
 
@@ -321,11 +322,13 @@ export class Renderer extends EventEmitter<RendererEvents> {
 
     if (!selectedObj) {
       log.warn(`No renderable found for objectId ${objectId}`);
+      this.emit("renderableSelected", undefined, this);
       return;
     }
 
     // Select the newly selected object
     selectObject(selectedObj);
+    this.emit("renderableSelected", selectedObj, this);
     log.debug(`Selected object ${selectedObj.name}`);
 
     // Re-render with the selected object. Disable this when setting debug=true
