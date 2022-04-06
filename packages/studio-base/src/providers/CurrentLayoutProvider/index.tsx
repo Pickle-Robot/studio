@@ -274,31 +274,26 @@ export default function CurrentLayoutProvider({
     }
   }, [getUserProfile, layoutManager, setSelectedLayoutId]);
 
-  const [panelSettingsActionInterceptors] = useState(
-    new Map<string, SettingsTreeActionInterceptor>(),
-  );
+  const panelSettingsActionInterceptors = useRef(new Map<string, SettingsTreeActionInterceptor>());
 
   const registerPanelSettingsActionInterceptor = useCallback(
     (panelId: string, interceptor: SettingsTreeActionInterceptor) => {
-      panelSettingsActionInterceptors.set(panelId, interceptor);
+      panelSettingsActionInterceptors.current.set(panelId, interceptor);
     },
-    [panelSettingsActionInterceptors],
+    [],
   );
 
-  const unregisterPanelSettingsActionInterceptor = useCallback(
-    (panelId: string) => {
-      panelSettingsActionInterceptors.delete(panelId);
-    },
-    [panelSettingsActionInterceptors],
-  );
+  const unregisterPanelSettingsActionInterceptor = useCallback((panelId: string) => {
+    panelSettingsActionInterceptors.current.delete(panelId);
+  }, []);
 
   const applyPanelSettingsAction = useCallback(
     (panelId: string, action: SettingsTreeAction) => {
-      const existingConfig = layoutState.selectedLayout?.data?.configById[panelId];
+      const existingConfig = layoutStateRef.current.selectedLayout?.data?.configById[panelId];
       if (!existingConfig) {
         return;
       }
-      const interceptor = panelSettingsActionInterceptors.get(panelId);
+      const interceptor = panelSettingsActionInterceptors.current.get(panelId);
       const settingsTree = isSettingsTree(existingConfig);
       const changedConfig = settingsTree
         ? interceptor
@@ -316,7 +311,7 @@ export default function CurrentLayoutProvider({
       };
       performAction({ type: "SAVE_PANEL_CONFIGS", payload });
     },
-    [panelSettingsActionInterceptors, layoutState.selectedLayout?.data?.configById, performAction],
+    [performAction],
   );
 
   const actions: ICurrentLayout["actions"] = useMemo(
