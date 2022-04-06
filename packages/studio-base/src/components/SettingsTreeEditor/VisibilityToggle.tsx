@@ -7,7 +7,6 @@ import { Checkbox, CheckboxProps, SvgIcon } from "@mui/material";
 export function VisibilityToggle(props: CheckboxProps): JSX.Element {
   return (
     <Checkbox
-      defaultChecked
       {...props}
       icon={
         <SvgIcon viewBox="0 0 16 16" color="disabled">
