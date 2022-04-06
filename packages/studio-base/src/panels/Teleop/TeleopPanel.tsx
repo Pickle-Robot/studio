@@ -10,10 +10,10 @@ import { definitions as commonDefs } from "@foxglove/rosmsg-msgs-common";
 import { PanelExtensionContext } from "@foxglove/studio";
 import {
   SettingsTree,
+  SettingsTreeAction,
   updateSettingsTree,
 } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import ThemeProvider from "@foxglove/studio-base/theme/ThemeProvider";
-import { PanelConfig } from "@foxglove/studio-base/types/panels";
 
 import DirectionalPad, { DirectionalPadAction } from "./DirectionalPad";
 import { DefaultState } from "./defaultState";
@@ -58,10 +58,10 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
   const [renderDone, setRenderDone] = useState<() => void>(() => () => {});
   const [colorScheme, setColorScheme] = useState<"dark" | "light">("light");
   useLayoutEffect(() => {
-    const interceptor = (previous: PanelConfig, path: string[], value: unknown) => {
-      return updateSettingsTree(previous as SettingsTree, path, value);
+    const interceptor = (previous: SettingsTree, action: SettingsTreeAction) => {
+      return updateSettingsTree(previous, action.payload.path, action.payload.value);
     };
-    context.setSettingsChangeInterceptor(interceptor);
+    context.setSettingsActionInterceptor(interceptor);
 
     context.watch("colorScheme");
     context.watch("configuration");

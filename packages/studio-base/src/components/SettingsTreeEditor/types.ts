@@ -34,10 +34,11 @@ export type SettingsTree = {
   showFilter?: boolean;
 };
 
-export type SettingsTreeChangeInterceptor = (
+export type SettingsTreeAction = { action: "update"; payload: { path: string[]; value: unknown } };
+
+export type SettingsTreeActionInterceptor = (
   settings: SettingsTree,
-  path: string[],
-  value: unknown,
+  action: SettingsTreeAction,
 ) => SettingsTree;
 
 export function isSettingsTree(val: unknown): val is SettingsTree {

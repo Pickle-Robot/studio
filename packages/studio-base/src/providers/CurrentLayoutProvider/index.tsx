@@ -12,7 +12,8 @@ import { useShallowMemo } from "@foxglove/hooks";
 import Logger from "@foxglove/log";
 import {
   isSettingsTree,
-  SettingsTreeChangeInterceptor,
+  SettingsTreeAction,
+  SettingsTreeActionInterceptor,
   updateSettingsTree,
 } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import { useAnalytics } from "@foxglove/studio-base/context/AnalyticsContext";
@@ -273,34 +274,36 @@ export default function CurrentLayoutProvider({
     }
   }, [getUserProfile, layoutManager, setSelectedLayoutId]);
 
-  const [panelChangeInterceptors] = useState(new Map<string, SettingsTreeChangeInterceptor>());
-
-  const registerPanelSettingsChangeInterceptor = useCallback(
-    (panelId: string, interceptor: SettingsTreeChangeInterceptor) => {
-      panelChangeInterceptors.set(panelId, interceptor);
-    },
-    [panelChangeInterceptors],
+  const [panelSettingsActionInterceptors] = useState(
+    new Map<string, SettingsTreeActionInterceptor>(),
   );
 
-  const unregisterPanelSettingsChangeInterceptor = useCallback(
+  const registerPanelSettingsActionInterceptor = useCallback(
+    (panelId: string, interceptor: SettingsTreeActionInterceptor) => {
+      panelSettingsActionInterceptors.set(panelId, interceptor);
+    },
+    [panelSettingsActionInterceptors],
+  );
+
+  const unregisterPanelSettingsActionInterceptor = useCallback(
     (panelId: string) => {
-      panelChangeInterceptors.delete(panelId);
+      panelSettingsActionInterceptors.delete(panelId);
     },
-    [panelChangeInterceptors],
+    [panelSettingsActionInterceptors],
   );
 
-  const applyPanelSettingsChange = useCallback(
-    (panelId: string, path: string[], value: unknown) => {
+  const applyPanelSettingsAction = useCallback(
+    (panelId: string, action: SettingsTreeAction) => {
       const existingConfig = layoutState.selectedLayout?.data?.configById[panelId];
       if (!existingConfig) {
         return;
       }
-      const interceptor = panelChangeInterceptors.get(panelId);
+      const interceptor = panelSettingsActionInterceptors.get(panelId);
       const settingsTree = isSettingsTree(existingConfig);
       const changedConfig = settingsTree
         ? interceptor
-          ? interceptor(existingConfig, path, value)
-          : updateSettingsTree(existingConfig, path, value)
+          ? interceptor(existingConfig, action)
+          : updateSettingsTree(existingConfig, action.payload.path, action.payload.value)
         : existingConfig; // don't try to update non-settings trees
       const payload: SaveConfigsPayload = {
         configs: [
@@ -313,7 +316,7 @@ export default function CurrentLayoutProvider({
       };
       performAction({ type: "SAVE_PANEL_CONFIGS", payload });
     },
-    [panelChangeInterceptors, layoutState.selectedLayout?.data?.configById, performAction],
+    [panelSettingsActionInterceptors, layoutState.selectedLayout?.data?.configById, performAction],
   );
 
   const actions: ICurrentLayout["actions"] = useMemo(
@@ -386,9 +389,9 @@ export default function CurrentLayoutProvider({
     removeLayoutStateListener,
     addSelectedPanelIdsListener,
     removeSelectedPanelIdsListener,
-    applyPanelSettingsChange,
-    registerPanelSettingsChangeInterceptor,
-    unregisterPanelSettingsChangeInterceptor,
+    applyPanelSettingsAction,
+    registerPanelSettingsActionInterceptor,
+    unregisterPanelSettingsActionInterceptor,
     mosaicId,
     getSelectedPanelIds,
     setSelectedPanelIds,

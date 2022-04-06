@@ -50,8 +50,8 @@ export default function PanelSettings({
     }
   });
 
-  const applyPanelConfigChange =
-    useGuaranteedContext(CurrentLayoutContext).applyPanelSettingsChange;
+  const applyPanelSettingsAction =
+    useGuaranteedContext(CurrentLayoutContext).applyPanelSettingsAction;
 
   const panelCatalog = usePanelCatalog();
   const { getCurrentLayoutState: getCurrentLayout, savePanelConfigs } = useCurrentLayoutActions();
@@ -91,10 +91,10 @@ export default function PanelSettings({
   const settingsUpdater = useCallback(
     (path: string[], value: unknown) => {
       if (selectedPanelId) {
-        applyPanelConfigChange(selectedPanelId, path, value);
+        applyPanelSettingsAction(selectedPanelId, { action: "update", payload: { path, value } });
       }
     },
-    [applyPanelConfigChange, selectedPanelId],
+    [applyPanelSettingsAction, selectedPanelId],
   );
 
   const { value: schema, error } = useAsync(async () => {

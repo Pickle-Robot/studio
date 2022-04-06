@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useUnmount } from "react-use";
 import { v4 as uuid } from "uuid";
 
 import Logger from "@foxglove/log";
@@ -31,7 +32,7 @@ import {
 } from "@foxglove/studio-base/components/MessagePipeline";
 import { usePanelContext } from "@foxglove/studio-base/components/PanelContext";
 import PanelToolbar from "@foxglove/studio-base/components/PanelToolbar";
-import { SettingsTreeChangeInterceptor } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
+import { SettingsTreeActionInterceptor } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import { useAppConfiguration } from "@foxglove/studio-base/context/AppConfigurationContext";
 import CurrentLayoutContext from "@foxglove/studio-base/context/CurrentLayoutContext";
 import {
@@ -109,8 +110,11 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
   const [subscribedAppSettings, setSubscribedAppSettings] = useState<string[]>([]);
   const previousPlayerStateRef = useRef<PlayerState | undefined>(undefined);
 
-  const registerPanelChangeInterceptor =
-    useGuaranteedContext(CurrentLayoutContext).registerPanelSettingsChangeInterceptor;
+  const registerPanelSettingsActionInterceptor =
+    useGuaranteedContext(CurrentLayoutContext).registerPanelSettingsActionInterceptor;
+
+  const unregisterPanelSettingsActionInterceptor =
+    useGuaranteedContext(CurrentLayoutContext).unregisterPanelSettingsActionInterceptor;
 
   // To avoid updating extended message stores once message pipeline blocks are no longer updating
   // we store a ref to the blocks and only update stores when the ref is different
@@ -361,6 +365,8 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
   useMessagePipeline(messagePipelineSelector);
 
+  useUnmount(() => unregisterPanelSettingsActionInterceptor(contextPanelId));
+
   type PartialPanelExtensionContext = Omit<PanelExtensionContext, "panelElement">;
   const partialExtensionContext = useMemo<PartialPanelExtensionContext>(() => {
     const layout: PanelExtensionContext["layout"] = {
@@ -387,8 +393,8 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
 
       seekPlayback: seekPlayback ? (stamp: number) => seekPlayback(fromSec(stamp)) : undefined,
 
-      setSettingsChangeInterceptor: (interceptor: SettingsTreeChangeInterceptor) => {
-        registerPanelChangeInterceptor(contextPanelId, interceptor);
+      setSettingsActionInterceptor: (interceptor: SettingsTreeActionInterceptor) => {
+        registerPanelSettingsActionInterceptor(contextPanelId, interceptor);
       },
 
       setParameter: (name: string, value: ParameterValue) => {
@@ -498,7 +504,7 @@ function PanelExtensionAdapter(props: PanelExtensionAdapterProps): JSX.Element {
     contextPanelId,
     openSiblingPanel,
     panelId,
-    registerPanelChangeInterceptor,
+    registerPanelSettingsActionInterceptor,
     requestBackfill,
     saveConfig,
     seekPlayback,

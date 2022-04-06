@@ -2,8 +2,6 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
-import { SettingsTreeChangeInterceptor } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
-
 declare module "@foxglove/studio" {
   // Valid types for parameter data (such as rosparams)
   export type ParameterValue =
@@ -57,12 +55,30 @@ declare module "@foxglove/studio" {
     children?: SettingsTreeChildren;
   };
 
+  /**
+   * A settings tree is a tree of panel settings that can be automatically managed by
+   * a default user interface in Studio.
+   */
   export type SettingsTree = {
     settings: {
       tree: SettingsTreeNode;
     };
     showFilter?: boolean;
   };
+
+  export type SettingsTreeAction = {
+    action: "update";
+    payload: { path: string[]; value: unknown };
+  };
+
+  /**
+   * Panels can let Studio automatically handle updates to the settings tree or they can register
+   * an interceptor to respond to actions on the settings tree like field updates.
+   */
+  export type SettingsTreeActionInterceptor = (
+    settings: SettingsTree,
+    action: SettingsTreeAction,
+  ) => SettingsTree;
 
   /**
    * A message event frames message data with the topic and receive time
@@ -206,7 +222,7 @@ declare module "@foxglove/studio" {
     /**
      * Register a change interceptor.
      */
-    setSettingsChangeInterceptor: (interceptor: SettingsTreeChangeInterceptor) => void;
+    setSettingsActionInterceptor: (interceptor: SettingsTreeActionInterceptor) => void;
 
     /**
      * Set the value of parameter name to value.
