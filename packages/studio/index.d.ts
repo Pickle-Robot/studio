@@ -32,10 +32,6 @@ declare module "@foxglove/studio" {
     datatype: string;
   };
 
-  /**
-   * A settings tree is a tree of panel settings that can be automatically managed by
-   * a default user interface in Studio.
-   */
   export type SettingsTreeFieldValue =
     | { input: "boolean"; value?: boolean }
     | { input: "color"; value?: string }
@@ -64,6 +60,10 @@ declare module "@foxglove/studio" {
     payload: { path: string[]; value: unknown };
   };
 
+  /**
+   * A settings tree is a tree of panel settings that can be managed by
+   * a default user interface in Studio.
+   */
   export type SettingsTree = {
     actionHandler: (action: SettingsTreeAction) => void;
     settings: SettingsTreeNode;
@@ -136,7 +136,7 @@ declare module "@foxglove/studio" {
     /**
      * The panel configuration.
      */
-    configuration?: unknown;
+    configuration?: Record<string, unknown>;
 
     /**
      * The latest messages for the current render frame. These are new messages since the last render frame.

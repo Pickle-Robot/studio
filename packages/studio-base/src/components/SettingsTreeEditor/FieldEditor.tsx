@@ -69,7 +69,7 @@ export function FieldEditor({
             value={field.value ?? 0}
             placeholder={field.placeholder}
             fullWidth
-            onChange={(event) => update(Number(event.target.value))}
+            onChange={(value) => update(value)}
           />
         );
       case "toggle":

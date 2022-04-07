@@ -52,27 +52,27 @@ export function NumberInput(
     iconUp?: ReactNode;
     iconDown?: ReactNode;
     value: number;
-  } & TextFieldProps,
+    onChange: (value: number) => void;
+  } & Omit<TextFieldProps, "onChange">,
 ): JSX.Element {
-  // const { value, iconDown, iconUp, increment = 1 } = props;
-  const { value, iconDown, iconUp } = props;
+  const { value, iconDown, iconUp, increment = 1, onChange } = props;
 
-  const [_shiftPressed] = useKeyPress("Shift");
+  const [shiftPressed] = useKeyPress("Shift");
 
-  // const incrementAmount = shiftPressed ? increment * 10 : increment;
+  const incrementAmount = shiftPressed ? increment * 10 : increment;
 
   return (
     <StyledTextField
       {...props}
       value={value}
-      onChange={props.onChange}
+      onChange={(event) => onChange(Number(event.target.value))}
       type="number"
       InputProps={{
         startAdornment: (
           <StyledIconButton
             size="small"
             edge="start"
-            // onClick={() => setValue(_value - incrementAmount)}
+            onClick={() => onChange(value - incrementAmount)}
           >
             {iconDown ?? <ChevronLeftIcon fontSize="small" />}
           </StyledIconButton>
@@ -81,7 +81,7 @@ export function NumberInput(
           <StyledIconButton
             size="small"
             edge="end"
-            // onClick={() => setValue(_value + incrementAmount)}
+            onClick={() => onChange(value + incrementAmount)}
           >
             {iconUp ?? <ChevronRightIcon fontSize="small" />}
           </StyledIconButton>
