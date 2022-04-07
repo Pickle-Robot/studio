@@ -2,6 +2,7 @@
 // License, v2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/
 
+import { Box } from "@mui/material";
 import produce from "immer";
 import { useCallback, useMemo } from "react";
 
@@ -33,7 +34,7 @@ const DefaultSettings: SettingsTreeNode = {
         url: {
           label: "Model URL (URDF)",
           input: "string",
-          placeholder: "https://example.com/model.urdf",
+          placeholder: "https://example.com/.../model.urdf",
           value: "",
           help: "URL pointing to a Unified Robot Description Format (URDF) XML file. For ROS users, we also support package:// URLs (loaded from the local filesystem) in our desktop app.",
         },
@@ -148,6 +149,13 @@ const DefaultSettings: SettingsTreeNode = {
               value: "#00ff00",
               input: "color",
             },
+            click_handling: {
+              label: "Selection mode",
+              value: "Line",
+              input: "select",
+              options: ["Line", "Enclosed polygons"],
+              help: "Treating line markers as polygons. Clicking inside the lines in the marker selects the marker. The default behavior for line markers requires the user to click exactly on the line to select the line marker. Enabling this feature can reduce performance",
+            },
           },
           children: {
             centerline: {
@@ -214,8 +222,8 @@ export const Default = (): JSX.Element => {
   );
 
   return (
-    <div style={{ overflowY: "auto" }}>
+    <Box bgcolor="background.paper" overflow="auto">
       <SettingsTreeEditor settings={settings} />
-    </div>
+    </Box>
   );
 };

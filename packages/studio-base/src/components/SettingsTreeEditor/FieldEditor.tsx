@@ -14,6 +14,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
+import { useMemo } from "react";
 import { DeepReadonly } from "ts-essentials";
 
 import Stack from "@foxglove/studio-base/components/Stack";
@@ -24,28 +25,30 @@ import { NumberInput } from "./inputs/NumberInput";
 import { SettingsTreeField } from "./types";
 
 const StyledToggleButtonGroup = muiStyled(ToggleButtonGroup)(({ theme }) => ({
-  background: theme.palette.grey[200],
-  padding: theme.spacing(0.25),
-  border: `1px solid ${theme.palette.divider} !important`,
+  backgroundColor: theme.palette.action.hover,
   gap: theme.spacing(0.25),
 
-  ".MuiToggleButton-root": {
-    borderRadius: `${theme.shape.borderRadius} !important`,
+  "& .MuiToggleButtonGroup-grouped": {
+    margin: theme.spacing(0.25),
+    borderRadius: theme.shape.borderRadius,
+    paddingTop: 0,
+    paddingBottom: 0,
+    borderColor: "transparent",
 
     "&.Mui-selected": {
-      border: `1px solid ${theme.palette.divider} !important`,
+      background: theme.palette.background.paper,
+      borderColor: theme.palette.action.focus,
+
+      "&:hover": {
+        borderColor: theme.palette.action.active,
+      },
     },
-  },
-}));
-
-const StyledToggleButton = muiStyled(ToggleButton)(({ theme }) => ({
-  borderRadius: `${theme.shape.borderRadius} !important`,
-  padding: 0,
-  border: "none",
-
-  "&.Mui-selected": {
-    background: theme.palette.background.paper,
-    border: `1px solid ${theme.palette.divider}`,
+    "&:not(:first-of-type)": {
+      borderRadius: theme.shape.borderRadius,
+    },
+    "&:first-of-type": {
+      borderRadius: theme.shape.borderRadius,
+    },
   },
 }));
 
@@ -56,6 +59,86 @@ export function FieldEditor({
   field: DeepReadonly<SettingsTreeField>;
   update: (value: unknown) => void;
 }): JSX.Element {
+  const input = useMemo(() => {
+    switch (field.input) {
+      case "number":
+        return (
+          <NumberInput
+            size="small"
+            variant="filled"
+            value={field.value ?? 0}
+            placeholder={field.placeholder}
+            fullWidth
+            onChange={(event) => update(Number(event.target.value))}
+          />
+        );
+      case "toggle":
+        return (
+          <StyledToggleButtonGroup
+            fullWidth
+            value={field.value}
+            exclusive
+            size="small"
+            onChange={(_event, value) => update(value)}
+          >
+            {field.options.map((opt) => (
+              <ToggleButton key={opt} value={opt}>
+                {opt}
+              </ToggleButton>
+            ))}
+          </StyledToggleButtonGroup>
+        );
+      case "string": {
+        return (
+          <TextField
+            variant="filled"
+            size="small"
+            fullWidth
+            value={field.value}
+            placeholder={field.placeholder}
+            onChange={(event) => update(event.target.value)}
+          />
+        );
+      }
+      case "boolean": {
+        return <>TODO: Boolean</>;
+      }
+      case "color": {
+        return (
+          <ColorPickerInput
+            defaultValue={field.value?.toString()}
+            value={field.value?.toString()}
+            size="small"
+            variant="filled"
+            fullWidth
+            onChange={(event) => update(event.target.value)}
+          />
+        );
+      }
+      case "select": {
+        return (
+          <Select
+            size="small"
+            fullWidth
+            variant="filled"
+            value={field.value}
+            onChange={(event) => update(event.target.value)}
+            MenuProps={{ MenuListProps: { dense: true } }}
+          >
+            {field.options.map((opt) => (
+              <MenuItem key={opt} value={opt}>
+                {opt}
+              </MenuItem>
+            ))}
+          </Select>
+        );
+      }
+      case "gradient": {
+        return <ColorScalePicker color="inherit" size="small" />;
+      }
+    }
+  }, [field, update]);
+
   return (
     <>
       <Stack direction="row" alignItems="center">
@@ -76,70 +159,7 @@ export function FieldEditor({
           </Tooltip>
         )}
       </Stack>
-      <div>
-        {field.input === "number" && (
-          <NumberInput
-            size="small"
-            variant="filled"
-            value={field.value ?? 0}
-            placeholder={field.placeholder}
-            fullWidth
-            onChange={(event) => update(Number(event.target.value))}
-          />
-        )}
-        {field.input === "toggle" && (
-          <StyledToggleButtonGroup
-            fullWidth
-            value={field.value}
-            exclusive
-            size="small"
-            onChange={(_event, value) => update(value)}
-          >
-            {field.options.map((opt) => (
-              <StyledToggleButton key={opt} value={opt}>
-                {opt}
-              </StyledToggleButton>
-            ))}
-          </StyledToggleButtonGroup>
-        )}
-        {field.input === "select" && (
-          <Select
-            size="small"
-            fullWidth
-            variant="filled"
-            value={field.value}
-            onChange={(event) => update(event.target.value)}
-          >
-            {field.options.map((opt) => (
-              <MenuItem key={opt} value={opt}>
-                {opt}
-              </MenuItem>
-            ))}
-          </Select>
-        )}
-        {/* {prop.input === "messagePath" && <>Message path input</>} */}
-        {field.input === "string" && (
-          <TextField
-            variant="filled"
-            size="small"
-            fullWidth
-            value={field.value}
-            onChange={(event) => update(event.target.value)}
-          />
-        )}
-        {field.input === "boolean" && <>TODO: Boolean</>}
-        {field.input === "gradient" && <ColorScalePicker color="inherit" size="small" />}
-        {field.input === "color" && (
-          <ColorPickerInput
-            defaultValue={field.value?.toString()}
-            value={field.value?.toString()}
-            size="small"
-            variant="filled"
-            fullWidth
-            onChange={(event) => update(event.target.value)}
-          />
-        )}
-      </div>
+      <div>{input}</div>
     </>
   );
 }

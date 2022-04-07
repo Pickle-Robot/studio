@@ -4,7 +4,7 @@
 
 import ClearIcon from "@mui/icons-material/Clear";
 import SearchIcon from "@mui/icons-material/Search";
-import { AppBar, IconButton, TextField, styled as muiStyled, List, Divider } from "@mui/material";
+import { AppBar, IconButton, TextField, styled as muiStyled, List } from "@mui/material";
 import { useCallback, useState } from "react";
 import { DeepReadonly } from "ts-essentials";
 
@@ -59,9 +59,7 @@ export default function SettingsTreeEditor({
         />
       </StyledAppBar>
       <List dense disablePadding>
-        <Divider />
         <NodeEditor path={[]} settings={settings.settings} updateSettings={updater} />
-        <Divider />
       </List>
     </Stack>
   );

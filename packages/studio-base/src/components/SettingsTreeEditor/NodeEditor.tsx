@@ -141,7 +141,6 @@ export function NodeEditor(props: NodeEditorProps): JSX.Element {
 
   return (
     <>
-      {indent === 1 && <Divider />}
       {(indent > 0 || fieldEditors.length > 0) && (
         <StyledListItem
           indent={indent}
@@ -194,6 +193,7 @@ export function NodeEditor(props: NodeEditorProps): JSX.Element {
         {indent !== 0 && childNodes}
       </Collapse>
       {indent === 0 && childNodes}
+      {indent === 1 && <Divider />}
     </>
   );
 }
