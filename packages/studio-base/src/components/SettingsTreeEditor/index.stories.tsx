@@ -204,6 +204,16 @@ const DefaultSettings: SettingsTreeNode = {
         },
       },
     },
+    topic_selector: {
+      label: "Topic Selector",
+      fields: {
+        topic: {
+          label: "Topic",
+          input: "autocomplete",
+          items: ["topic1", "topic2", "topic3"],
+        },
+      },
+    },
     pose: {
       label: "Pose",
       fields: {

@@ -33,6 +33,7 @@ declare module "@foxglove/studio" {
   };
 
   export type SettingsTreeFieldValue =
+    | { input: "autocomplete"; value?: string; items: string[] }
     | { input: "boolean"; value?: boolean }
     | { input: "color"; value?: string }
     | { input: "gradient"; value?: string }

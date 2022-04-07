@@ -4,6 +4,7 @@
 
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
+  Autocomplete,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
@@ -61,6 +62,17 @@ export function FieldEditor({
 }): JSX.Element {
   const input: JSX.Element = useMemo(() => {
     switch (field.input) {
+      case "autocomplete":
+        return (
+          <Autocomplete
+            freeSolo={true}
+            value={field.value}
+            renderInput={(params) => <TextField {...params} variant="filled" size="small" />}
+            onInputChange={(_event, value) => update(value)}
+            onChange={(_event, value) => update(value)}
+            options={field.items}
+          />
+        );
       case "number":
         return (
           <NumberInput

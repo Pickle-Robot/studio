@@ -8,7 +8,12 @@ import { ReactNode, useCallback, useEffect, useLayoutEffect, useState } from "re
 import { DeepPartial } from "ts-essentials";
 
 import { definitions as commonDefs } from "@foxglove/rosmsg-msgs-common";
-import { PanelExtensionContext, SettingsTreeAction, SettingsTreeNode } from "@foxglove/studio";
+import {
+  PanelExtensionContext,
+  SettingsTreeAction,
+  SettingsTreeNode,
+  Topic,
+} from "@foxglove/studio";
 import ThemeProvider from "@foxglove/studio-base/theme/ThemeProvider";
 
 import DirectionalPad, { DirectionalPadAction } from "./DirectionalPad";
@@ -35,11 +40,16 @@ type Config = {
   rightButton: { field: string; value: number };
 };
 
-function buildSettingsTree(config: Config): SettingsTreeNode {
+function buildSettingsTree(config: Config, topics: readonly Topic[]): SettingsTreeNode {
   return {
     fields: {
       publishRate: { label: "Publish Rate", input: "number", value: config.publishRate },
-      topic: { label: "Topic", input: "string", value: config.topic },
+      topic: {
+        label: "Topic",
+        input: "autocomplete",
+        value: config.topic,
+        items: topics.map((t) => t.name),
+      },
     },
     children: {
       upButton: {
@@ -119,6 +129,7 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
   const { saveState } = context;
 
   const [currentAction, setCurrentAction] = useState<DirectionalPadAction | undefined>();
+  const [topics, setTopics] = useState<readonly Topic[]>([]);
 
   // resolve an initial config which may have some missing fields into a full config
   const [config, setConfig] = useState<Config>(() => {
@@ -159,6 +170,7 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
     context.watch("colorScheme");
 
     context.onRender = (renderState, done) => {
+      setTopics(renderState.topics ?? []);
       setRenderDone(() => done);
       if (renderState.colorScheme) {
         setColorScheme(renderState.colorScheme);
@@ -167,10 +179,10 @@ function TeleopPanel(props: TeleopPanelProps): JSX.Element {
   }, [context, settingsActionHandler]);
 
   useEffect(() => {
-    const tree = buildSettingsTree(config);
+    const tree = buildSettingsTree(config, topics);
     context.publishPanelSettingsTree({ settings: tree, actionHandler: settingsActionHandler });
     saveState(config);
-  }, [config, context, saveState, settingsActionHandler]);
+  }, [config, context, saveState, settingsActionHandler, topics]);
 
   // advertise topic
   const { topic: currentTopic } = config;
