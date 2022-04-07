@@ -34,6 +34,8 @@ export type RendererEvents = {
   removeLabel: (labelId: string, renderer: Renderer) => void;
 };
 
+const DEBUG_PICKING = false;
+
 const LIGHT_BACKDROP = new THREE.Color(0xececec).convertSRGBToLinear();
 const DARK_BACKDROP = new THREE.Color(0x121217).convertSRGBToLinear();
 
@@ -153,7 +155,7 @@ export class Renderer extends EventEmitter<RendererEvents> {
     this.camera.position.set(1, -3, 1);
     this.camera.lookAt(0, 0, 0);
 
-    this.picker = new Picker(this.gl, this.scene, this.camera);
+    this.picker = new Picker(this.gl, this.scene, this.camera, { debug: DEBUG_PICKING });
 
     this.selectionBackdrop = new ScreenOverlay();
     this.selectionBackdrop.visible = false;
@@ -331,9 +333,11 @@ export class Renderer extends EventEmitter<RendererEvents> {
     this.emit("renderableSelected", selectedObj, this);
     log.debug(`Selected object ${selectedObj.name}`);
 
-    // Re-render with the selected object. Disable this when setting debug=true
-    // in Picker so the debug render stays on the screen
-    this.animationFrame();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!DEBUG_PICKING) {
+      // Re-render with the selected object
+      this.animationFrame();
+    }
   };
 }
 
