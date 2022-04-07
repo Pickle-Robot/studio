@@ -49,12 +49,6 @@ export class RenderableMarker extends THREE.Object3D {
     this.userData.pose = marker.pose;
   }
 
-  startFrame(currentTime: bigint, renderFrameId: string, fixedFrameId: string): void {
-    void currentTime;
-    void renderFrameId;
-    void fixedFrameId;
-  }
-
   // Convert sRGB values to linear
   protected _markerColorsToLinear(
     marker: Marker,

@@ -105,8 +105,6 @@ export class TopicMarkers extends THREE.Object3D {
             MISSING_TRANSFORM,
             message,
           );
-        } else {
-          renderable.startFrame(currentTime, renderFrameId, fixedFrameId);
         }
       }
     }

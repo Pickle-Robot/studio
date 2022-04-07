@@ -117,7 +117,6 @@ export class FrameAxes extends THREE.Object3D {
 
   startFrame(currentTime: bigint): void {
     this.lineMaterial.resolution = this.renderer.input.canvasSize;
-    // this.linePickingMaterial.uniforms["resolution"]!.value = this.renderer.input.canvasSize;
 
     const renderFrameId = this.renderer.renderFrameId;
     const fixedFrameId = this.renderer.fixedFrameId;
