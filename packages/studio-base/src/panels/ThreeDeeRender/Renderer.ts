@@ -36,8 +36,10 @@ export type RendererEvents = {
 
 const DEBUG_PICKING = false;
 
-const LIGHT_BACKDROP = new THREE.Color(0xececec).convertSRGBToLinear();
-const DARK_BACKDROP = new THREE.Color(0x121217).convertSRGBToLinear();
+// NOTE: These do not use .convertSRGBToLinear() since background color is not
+// affected by gamma correction
+const LIGHT_BACKDROP = new THREE.Color(0xececec);
+const DARK_BACKDROP = new THREE.Color(0x121217);
 
 const LIGHT_OUTLINE = new THREE.Color(0x000000).convertSRGBToLinear();
 const DARK_OUTLINE = new THREE.Color(0xffffff).convertSRGBToLinear();

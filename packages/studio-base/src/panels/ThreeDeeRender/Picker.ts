@@ -60,7 +60,7 @@ export class Picker {
     this.shouldPickObjectCB = AlwaysPickObject;
     this.debug = options.debug ?? false;
 
-    // This is the 1x1 pixel render target we use to do the picking
+    // This is the PIXEL_WIDTH x PIXEL_WIDTH render target we use to do the picking
     this.pickingTarget = new THREE.WebGLRenderTarget(PIXEL_WIDTH, PIXEL_WIDTH, {
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
