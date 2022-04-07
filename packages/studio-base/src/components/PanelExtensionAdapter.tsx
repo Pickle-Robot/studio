@@ -25,9 +25,9 @@ import {
   PanelExtensionContext,
   ParameterValue,
   RenderState,
+  SettingsTree,
   Topic,
 } from "@foxglove/studio";
-import { SettingsTree } from "@foxglove/studio";
 import {
   MessagePipelineContext,
   useMessagePipeline,
