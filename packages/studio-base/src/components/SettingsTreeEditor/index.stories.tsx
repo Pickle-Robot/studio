@@ -94,11 +94,68 @@ const DefaultSettings: SettingsTreeNode = {
           input: "number",
           value: 9,
         },
+        frame_lock: {
+          label: "Frame lock",
+          input: "boolean",
+          value: false,
+          help: "When enabled, the map will not be updated when the robot moves.",
+        },
       },
     },
     topics: {
       label: "Topics",
       children: {
+        drivable_area: {
+          label: "/drivable_area",
+          fields: {
+            frame_lock: {
+              label: "Frame lock",
+              input: "boolean",
+              value: false,
+              help: "When enabled, the map will not be updated when the robot moves.",
+            },
+          },
+        },
+        map: {
+          label: "/map",
+          fields: {
+            frame_lock: {
+              label: "Frame lock",
+              input: "boolean",
+              value: false,
+              help: "When enabled, the map will not be updated when the robot moves.",
+            },
+          },
+        },
+        semantic_map: {
+          label: "/semantic_map",
+          fields: {
+            color: {
+              label: "Color",
+              value: "#00ff00",
+              input: "color",
+            },
+            click_handling: {
+              label: "Selection mode",
+              value: "Line",
+              input: "select",
+              options: ["Line", "Enclosed polygons"],
+              help: "Treating line markers as polygons. Clicking inside the lines in the marker selects the marker. The default behavior for line markers requires the user to click exactly on the line to select the line marker. Enabling this feature can reduce performance",
+            },
+          },
+          children: {
+            centerline: {
+              label: "centerline",
+              fields: {
+                color: {
+                  label: "Color",
+                  value: "#00ff00",
+                  input: "color",
+                },
+              },
+            },
+          },
+        },
         lidar_top: {
           label: "/LIDAR_TOP",
           fields: {
@@ -138,35 +195,6 @@ const DefaultSettings: SettingsTreeNode = {
               label: "Decay Time (seconds)",
               input: "number",
               value: 0,
-            },
-          },
-        },
-        semantic_map: {
-          label: "/SEMANTIC_MAP",
-          fields: {
-            color: {
-              label: "Color",
-              value: "#00ff00",
-              input: "color",
-            },
-            click_handling: {
-              label: "Selection mode",
-              value: "Line",
-              input: "select",
-              options: ["Line", "Enclosed polygons"],
-              help: "Treating line markers as polygons. Clicking inside the lines in the marker selects the marker. The default behavior for line markers requires the user to click exactly on the line to select the line marker. Enabling this feature can reduce performance",
-            },
-          },
-          children: {
-            centerline: {
-              label: "centerline",
-              fields: {
-                color: {
-                  label: "Color",
-                  value: "#00ff00",
-                  input: "color",
-                },
-              },
             },
           },
         },

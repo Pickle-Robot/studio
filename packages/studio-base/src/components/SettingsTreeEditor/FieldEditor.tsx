@@ -59,7 +59,7 @@ export function FieldEditor({
   field: DeepReadonly<SettingsTreeField>;
   update: (value: unknown) => void;
 }): JSX.Element {
-  const input = useMemo(() => {
+  const input: JSX.Element = useMemo(() => {
     switch (field.input) {
       case "number":
         return (
@@ -101,7 +101,18 @@ export function FieldEditor({
         );
       }
       case "boolean": {
-        return <>TODO: Boolean</>;
+        return (
+          <StyledToggleButtonGroup
+            fullWidth
+            value={field.value}
+            exclusive
+            size="small"
+            onChange={(_event, value) => update(value)}
+          >
+            <ToggleButton value={true}>On</ToggleButton>
+            <ToggleButton value={false}>Off</ToggleButton>
+          </StyledToggleButtonGroup>
+        );
       }
       case "color": {
         return (
