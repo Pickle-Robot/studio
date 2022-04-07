@@ -5,7 +5,7 @@
 import { createContext, ReactNode, useCallback, useMemo, useState } from "react";
 import { DeepReadonly } from "ts-essentials";
 
-import { SettingsTree } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
+import { SettingsTree } from "@foxglove/studio";
 
 export type PanelSettingsEditorContextType = {
   panelSettingsTrees: DeepReadonly<Record<string, SettingsTree>>;

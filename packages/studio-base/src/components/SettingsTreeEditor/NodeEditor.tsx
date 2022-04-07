@@ -20,11 +20,11 @@ import {
 import { ChangeEvent, useState } from "react";
 import { DeepReadonly } from "ts-essentials";
 
+import { SettingsTreeNode } from "@foxglove/studio";
 import Stack from "@foxglove/studio-base/components/Stack";
 
 import { FieldEditor } from "./FieldEditor";
 import { VisibilityToggle } from "./VisibilityToggle";
-import { SettingsTreeNode } from "./types";
 
 export type NodeEditorProps = {
   defaultOpen?: boolean;

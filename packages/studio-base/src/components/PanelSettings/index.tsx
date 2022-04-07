@@ -8,7 +8,6 @@ import { useAsync, useUnmount } from "react-use";
 
 import { useConfigById } from "@foxglove/studio-base/PanelAPI";
 import SettingsEditor from "@foxglove/studio-base/components/SettingsTreeEditor";
-import { isSettingsTree } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import ShareJsonModal from "@foxglove/studio-base/components/ShareJsonModal";
 import { SidebarContent } from "@foxglove/studio-base/components/SidebarContent";
 import Stack from "@foxglove/studio-base/components/Stack";
@@ -138,17 +137,14 @@ export default function PanelSettings({
     );
   }
 
-  const configIsSettingsStree = isSettingsTree(config);
+  const isSettingsTree = settingsTree != undefined;
 
   return (
-    <SidebarContent
-      disablePadding={configIsSettingsStree}
-      title={`${panelInfo.title} panel settings`}
-    >
+    <SidebarContent disablePadding={isSettingsTree} title={`${panelInfo.title} panel settings`}>
       {shareModal}
       <Stack gap={2} justifyContent="flex-start">
         {panelInfo.help != undefined && (
-          <Stack paddingX={configIsSettingsStree ? 2 : 0}>
+          <Stack paddingX={isSettingsTree ? 2 : 0}>
             <Typography color="text.secondary">
               See docs{" "}
               <Link
@@ -175,8 +171,8 @@ export default function PanelSettings({
           )}
         </div>
         <Stack
-          paddingX={configIsSettingsStree ? 2 : 0}
-          paddingBottom={configIsSettingsStree ? 2 : 0}
+          paddingX={isSettingsTree ? 2 : 0}
+          paddingBottom={isSettingsTree ? 2 : 0}
           gap={1}
           alignItems="flex-start"
         >

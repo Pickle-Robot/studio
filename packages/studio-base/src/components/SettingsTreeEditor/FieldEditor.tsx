@@ -17,12 +17,12 @@ import {
 import { useMemo } from "react";
 import { DeepReadonly } from "ts-essentials";
 
+import { SettingsTreeField } from "@foxglove/studio";
 import Stack from "@foxglove/studio-base/components/Stack";
 
 import { ColorPickerInput } from "./inputs/ColorPickerInput";
 import { ColorScalePicker } from "./inputs/ColorScalePicker";
 import { NumberInput } from "./inputs/NumberInput";
-import { SettingsTreeField } from "./types";
 
 const StyledToggleButtonGroup = muiStyled(ToggleButtonGroup)(({ theme }) => ({
   backgroundColor: theme.palette.action.hover,

@@ -43,6 +43,7 @@ declare module "@foxglove/studio" {
 
   export type SettingsTreeField = SettingsTreeFieldValue & {
     label: string;
+    help?: string;
     placeholder?: string;
   };
 

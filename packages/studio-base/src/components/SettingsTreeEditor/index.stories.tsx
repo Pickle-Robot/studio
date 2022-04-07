@@ -6,9 +6,8 @@ import { Box } from "@mui/material";
 import produce from "immer";
 import { useCallback, useMemo } from "react";
 
+import { SettingsTreeNode, SettingsTreeFieldValue, SettingsTreeAction } from "@foxglove/studio";
 import SettingsTreeEditor from "@foxglove/studio-base/components/SettingsTreeEditor";
-
-import { SettingsTreeNode, SettingsTreeFieldValue, SettingsTreeAction } from "./types";
 
 export default {
   title: "components/SettingsTreeEditor",

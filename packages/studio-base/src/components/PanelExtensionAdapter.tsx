@@ -27,13 +27,13 @@ import {
   RenderState,
   Topic,
 } from "@foxglove/studio";
+import { SettingsTree } from "@foxglove/studio";
 import {
   MessagePipelineContext,
   useMessagePipeline,
 } from "@foxglove/studio-base/components/MessagePipeline";
 import { usePanelContext } from "@foxglove/studio-base/components/PanelContext";
 import PanelToolbar from "@foxglove/studio-base/components/PanelToolbar";
-import { SettingsTree } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
 import { useAppConfiguration } from "@foxglove/studio-base/context/AppConfigurationContext";
 import {
   useClearHoverValue,

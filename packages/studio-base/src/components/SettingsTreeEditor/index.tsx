@@ -8,7 +8,7 @@ import { AppBar, IconButton, TextField, styled as muiStyled, List } from "@mui/m
 import { useCallback, useState } from "react";
 import { DeepReadonly } from "ts-essentials";
 
-import { SettingsTree } from "@foxglove/studio-base/components/SettingsTreeEditor/types";
+import { SettingsTree } from "@foxglove/studio";
 import Stack from "@foxglove/studio-base/components/Stack";
 
 import { NodeEditor } from "./NodeEditor";
