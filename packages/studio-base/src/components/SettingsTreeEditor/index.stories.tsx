@@ -35,7 +35,9 @@ const DefaultSettings: SettingsTreeNode = {
           input: "string",
           placeholder: "https://example.com/.../model.urdf",
           value: "",
-          help: "URL pointing to a Unified Robot Description Format (URDF) XML file. For ROS users, we also support package:// URLs (loaded from the local filesystem) in our desktop app.",
+          help: `URL pointing to a Unified Robot Description Format (URDF) XML file.
+           For ROS users, we also support package:// URLs
+           (loaded from the local filesystem) in our desktop app.`,
         },
       },
     },
@@ -139,7 +141,10 @@ const DefaultSettings: SettingsTreeNode = {
               value: "Line",
               input: "select",
               options: ["Line", "Enclosed polygons"],
-              help: "Treating line markers as polygons. Clicking inside the lines in the marker selects the marker. The default behavior for line markers requires the user to click exactly on the line to select the line marker. Enabling this feature can reduce performance",
+              help: `Treating line markers as polygons. Clicking inside the lines in the
+                marker selects the marker. The default behavior for line markers requires the
+                user to click exactly on the line to select the line marker.
+                Enabling this feature can reduce performance.`,
             },
           },
           children: {
